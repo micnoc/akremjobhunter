@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -6,10 +7,12 @@ class AboutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
       backgroundColor: AppTheme.bgDark,
       appBar: AppBar(
-        title: const Text('About akremjobhunter'),
+        title: Text(l10n.t('about_title')),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -68,8 +71,8 @@ class AboutScreen extends StatelessWidget {
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
+                          children: [
+                            const Text(
                               'akremjobhunter',
                               style: TextStyle(
                                 fontSize: 22,
@@ -78,8 +81,8 @@ class AboutScreen extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              'Version 2.0.0 (Production Architecture)',
-                              style: TextStyle(fontSize: 12, color: AppTheme.primary),
+                              l10n.t('about_version'),
+                              style: const TextStyle(fontSize: 12, color: AppTheme.primary),
                             ),
                           ],
                         ),
@@ -97,31 +100,21 @@ class AboutScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _buildSectionCard(
-                    title: 'Mission & Autonomous Intelligence',
+                    title: l10n.t('about_mission_title'),
                     icon: Icons.auto_awesome_rounded,
-                    content:
-                        'akremjobhunter is an autonomous 24/7 AI-powered recruitment engine designed specifically for international talent seeking opportunities across the European Union, Canada, and the United States.\n\n'
-                        'The cloud engine continuously scrapes official sources, screens job postings for genuine international applicant support (visa sponsorship & work permits), filters out public/citizen-only roles, and submits applications even while your mobile phone is offline.',
+                    content: l10n.t('about_mission_body'),
                   ),
                   const SizedBox(height: 16),
                   _buildSectionCard(
-                    title: 'Strict CV Grounding Guarantee',
+                    title: l10n.t('about_grounding_title'),
                     icon: Icons.verified_user_outlined,
-                    content:
-                        'The platform strictly guarantees ZERO fabrication:\n'
-                        '• The AI will NEVER invent qualifications, certificates, or experiences not explicitly present in your uploaded CV.\n'
-                        '• Cover letters and outreach emails reflect your exact authentic background.\n'
-                        '• Match scores and skill gaps are calculated objectively against real employer requirements.',
+                    content: l10n.t('about_grounding_body'),
                   ),
                   const SizedBox(height: 16),
                   _buildSectionCard(
-                    title: 'Privacy & Security Architecture',
+                    title: l10n.t('about_security_title'),
                     icon: Icons.lock_outline_rounded,
-                    content:
-                        '• Passwords hashed with state-of-the-art Argon2id.\n'
-                        '• Zero-trust JWT session management with refresh token rotation.\n'
-                        '• Cloud secrets and API keys encrypted at rest with AES/Fernet.\n'
-                        '• Direct client-to-server connection without third-party analytics or trackers.',
+                    content: l10n.t('about_security_body'),
                   ),
                   const SizedBox(height: 24),
                   Center(
@@ -155,9 +148,11 @@ class AboutScreen extends StatelessWidget {
             children: [
               Icon(icon, size: 20, color: AppTheme.primary),
               const SizedBox(width: 10),
-              Text(
-                title,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),

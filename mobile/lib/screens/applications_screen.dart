@@ -327,9 +327,28 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'CV: ${item.cvLabel ?? "Standard"}',
-                    style: const TextStyle(fontSize: 11, color: AppTheme.primary),
+                  Row(
+                    children: [
+                      Text(
+                        'CV: ${item.cvLabel ?? "Standard"}',
+                        style: const TextStyle(fontSize: 11, color: AppTheme.primary),
+                      ),
+                      if (item.probability != null) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981).withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: const Color(0xFF10B981)),
+                          ),
+                          child: Text(
+                            '🎯 ${item.probability!['total_probability'] ?? 75}% قبول',
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   Text(
                     (item.sentAt ?? item.createdAt ?? '').split('T')[0],

@@ -45,6 +45,7 @@ DEFAULTS: dict[str, Any] = {
     "notify_manual_review": True,
     "follow_up_days": 8,
     "engine_paused": False,
+    "notification_language": "ar",  # ar | fr | en
     # Authentication Policy (Configurable by admin)
     "auth_min_password_length": 8,
     "auth_require_uppercase": True,

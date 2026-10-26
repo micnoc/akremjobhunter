@@ -394,6 +394,55 @@ CATEGORY_STATUS = {
     "INFO_REQUEST": AppStatus.IN_PROGRESS,
 }
 NOTIFY = {"INTERVIEW_INVITE", "OFFER", "POSITIVE_NEXT_STEP", "INFO_REQUEST"}
+
+NOTIF_TEXTS = {
+    "ar": {
+        "INTERVIEW_INVITE": "🎉 دعوة لمقابلة عمل (Interview Invitation)",
+        "OFFER": "🏆 عرض عمل رسمي (Job Offer)",
+        "POSITIVE_NEXT_STEP": "✨ رد إيجابي من المشغّل (Positive Step)",
+        "INFO_REQUEST": "📩 طلب معلومات إضافية من الشركة",
+        "FROM": "المرسل",
+        "SUBJECT": "الموضوع",
+        "PROPOSED_REPLY": "الرد المقترح آلياً بالاستناد إلى السيرة الذاتية:",
+        "SEND_REPLY": "إرسال الرد",
+        "DISMISS": "تجاهل",
+        "REVIEW_LETTER": "مراجعة وإرسال الرسالة",
+        "SKIP": "تخطي",
+        "PORTAL_READY": "رسالة التقديم جاهزة داخل التطبيق. قدّم في بوابة الشركة ثم أكّد التقديم.",
+        "EMAIL_READY": "ترشح عبر البريد الإلكتروني. راجع الرسالة في التطبيق أو أرسل فوراً.",
+    },
+    "fr": {
+        "INTERVIEW_INVITE": "🎉 Invitation à un entretien d'embauche",
+        "OFFER": "🏆 Offre d'emploi officielle reçue",
+        "POSITIVE_NEXT_STEP": "✨ Réponse positive de l'employeur",
+        "INFO_REQUEST": "📩 L'employeur demande des informations complémentaires",
+        "FROM": "De",
+        "SUBJECT": "Objet",
+        "PROPOSED_REPLY": "Réponse proposée (basée strictement sur votre CV) :",
+        "SEND_REPLY": "Envoyer la réponse",
+        "DISMISS": "Ignorer",
+        "REVIEW_LETTER": "Vérifier & Envoyer",
+        "SKIP": "Passer",
+        "PORTAL_READY": "La lettre de motivation est prête dans l'app. Postulez sur le portail employeur puis confirmez.",
+        "EMAIL_READY": "Candidature par e-mail. Vérifiez la lettre dans l'application ou envoyez maintenant.",
+    },
+    "en": {
+        "INTERVIEW_INVITE": "🎉 Interview invitation",
+        "OFFER": "🏆 Job offer received",
+        "POSITIVE_NEXT_STEP": "✨ Positive response from employer",
+        "INFO_REQUEST": "📩 Employer requests additional information",
+        "FROM": "From",
+        "SUBJECT": "Subject",
+        "PROPOSED_REPLY": "Proposed reply (strictly grounded in CV):",
+        "SEND_REPLY": "Send reply",
+        "DISMISS": "Dismiss",
+        "REVIEW_LETTER": "Send now",
+        "SKIP": "Skip",
+        "PORTAL_READY": "Portal application: the cover letter is ready in the app. Submit on the employer page, then confirm.",
+        "EMAIL_READY": "Email application ready. Review the letter in the app or send now.",
+    },
+}
+
 TRACKED = [
     AppStatus.SENT, AppStatus.APPLIED_MANUAL, AppStatus.ACKNOWLEDGED, AppStatus.IN_PROGRESS, AppStatus.INTERVIEW,
 ]
@@ -503,23 +552,20 @@ def _triage(mail: mailer.InboundMail, app_id: int) -> None:
 
     if cat not in NOTIFY:
         return
-    headline = {
-        "INTERVIEW_INVITE": "Interview invitation",
-        "OFFER": "Job offer received",
-        "POSITIVE_NEXT_STEP": "Positive response",
-        "INFO_REQUEST": "Employer requests information",
-    }[cat]
+    lang = (store.get("notification_language") or "ar").lower()
+    strings = NOTIF_TEXTS.get(lang, NOTIF_TEXTS["ar"])
+    headline = strings.get(cat, cat)
     text = (
         f"<b>{headline}</b>\n<b>{esc(ctx['title'])}</b> — {esc(ctx['company'])} ({ctx['country']})\n"
-        f"From: {esc(mail.from_addr)}\nSubject: {esc(mail.subject)}\n\n"
+        f"{strings['FROM']}: {esc(mail.from_addr)}\n{strings['SUBJECT']}: {esc(mail.subject)}\n\n"
         f"<i>“{esc(tri.evidence[:500])}”</i>\n\n{esc(tri.summary)}"
     )
     if tri.interview_datetime:
         text += f"\n\nDate: <b>{esc(tri.interview_datetime)}</b>"
     buttons = None
     if tri.needs_reply and tri.draft_reply:
-        text += f"\n\n<b>Proposed reply:</b>\n{esc(tri.draft_reply[:1500])}"
-        buttons = [[("Send reply", f"reply:{event_id}:send"), ("Dismiss", f"reply:{event_id}:dismiss")]]
+        text += f"\n\n<b>{strings['PROPOSED_REPLY']}</b>\n{esc(tri.draft_reply[:1500])}"
+        buttons = [[(strings['SEND_REPLY'], f"reply:{event_id}:send"), (strings['DISMISS'], f"reply:{event_id}:dismiss")]]
     notifier.send(text, buttons, whatsapp=True)
 
     if cat == "INTERVIEW_INVITE":

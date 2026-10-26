@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_localizations.dart';
 import 'screens/applications_screen.dart';
 import 'screens/auth_screen.dart';
 import 'screens/cv_vault_screen.dart';
@@ -12,6 +14,7 @@ import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await LanguageController.instance.init();
   await ApiService.loadCredentials();
   runApp(const AkremJobHunterApp());
 }
@@ -21,11 +24,26 @@ class AkremJobHunterApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'akremjobhunter',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
-      home: const SplashScreen(),
+    return AnimatedBuilder(
+      animation: LanguageController.instance,
+      builder: (context, _) {
+        final currentLocale = LanguageController.instance.currentLocale;
+
+        return MaterialApp(
+          title: 'akremjobhunter',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.darkTheme,
+          locale: currentLocale,
+          supportedLocales: AppLanguage.supportedLocales,
+          localizationsDelegates: const [
+            AppLocalizationsDelegate(),
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: const SplashScreen(),
+        );
+      },
     );
   }
 }
@@ -43,6 +61,8 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     final screens = [
       DashboardScreen(onNavigateTab: (index) => setState(() => _currentIndex = index)),
       const ReviewScreen(),
@@ -72,36 +92,36 @@ class _MainShellState extends State<MainShell> {
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),
         type: BottomNavigationBarType.fixed,
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard_rounded),
-            label: 'Dashboard',
+            icon: const Icon(Icons.dashboard_outlined),
+            activeIcon: const Icon(Icons.dashboard_rounded),
+            label: l10n.t('nav_dashboard'),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.touch_app_outlined),
-            activeIcon: Icon(Icons.touch_app_rounded),
-            label: 'Review',
+            icon: const Icon(Icons.touch_app_outlined),
+            activeIcon: const Icon(Icons.touch_app_rounded),
+            label: l10n.t('nav_review'),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.history_rounded),
-            activeIcon: Icon(Icons.history_toggle_off_rounded),
-            label: 'Memory',
+            icon: const Icon(Icons.history_rounded),
+            activeIcon: const Icon(Icons.history_toggle_off_rounded),
+            label: l10n.t('nav_memory'),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.folder_copy_outlined),
-            activeIcon: Icon(Icons.folder_copy_rounded),
-            label: 'CV Vault',
+            icon: const Icon(Icons.folder_copy_outlined),
+            activeIcon: const Icon(Icons.folder_copy_rounded),
+            label: l10n.t('nav_cv_vault'),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart_rounded),
-            activeIcon: Icon(Icons.analytics_rounded),
-            label: 'Insights',
+            icon: const Icon(Icons.bar_chart_rounded),
+            activeIcon: const Icon(Icons.analytics_rounded),
+            label: l10n.t('nav_insights'),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.tune_rounded),
-            activeIcon: Icon(Icons.settings_rounded),
-            label: 'Settings',
+            icon: const Icon(Icons.tune_rounded),
+            activeIcon: const Icon(Icons.settings_rounded),
+            label: l10n.t('nav_settings'),
           ),
         ],
       ),

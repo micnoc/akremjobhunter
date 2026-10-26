@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../main.dart';
+import '../l10n/app_localizations.dart';
+import 'developer_panel_screen.dart';
+import '../widgets/arab_country_picker.dart';
+import '../widgets/language_selector.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -26,6 +30,9 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   final _regUsernameController = TextEditingController();
   final _regEmailController = TextEditingController();
   final _regFullNameController = TextEditingController();
+  final _regPhoneController = TextEditingController();
+  ArabCountry _selectedArabCountry = getArabCountry('TN');
+  int _secretTaps = 0;
   final _regPassController = TextEditingController();
   final _regConfirmPassController = TextEditingController();
   bool _regObscure = true;
@@ -64,6 +71,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     _regUsernameController.dispose();
     _regEmailController.dispose();
     _regFullNameController.dispose();
+    _regPhoneController.dispose();
     _regPassController.dispose();
     _regConfirmPassController.dispose();
     super.dispose();
@@ -89,12 +97,12 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     return AppTheme.primary;
   }
 
-  String _getStrengthLabel(double strength) {
-    if (strength <= 0.0) return 'Enter password';
-    if (strength < 0.4) return 'Weak';
-    if (strength < 0.7) return 'Medium';
-    if (strength < 0.9) return 'Strong';
-    return 'Very Strong';
+  String _getStrengthLabel(double strength, AppLocalizations l10n) {
+    if (strength <= 0.0) return '...';
+    if (strength < 0.4) return l10n.t('auth_strength_weak');
+    if (strength < 0.7) return l10n.t('auth_strength_medium');
+    if (strength < 0.9) return l10n.t('auth_strength_strong');
+    return l10n.t('auth_strength_very_strong');
   }
 
   // --- Handlers
@@ -152,18 +160,21 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     });
 
     try {
-      await ApiService.register(
+      final regRes = await ApiService.register(
         username: username,
         email: email,
         password: pass,
         fullName: fullName.isNotEmpty ? fullName : null,
+        countryCode: _selectedArabCountry.code,
+        phone: _regPhoneController.text.trim(),
       );
 
       if (!mounted) return;
       setState(() => _regLoading = false);
 
-      // Prompt email verification
-      _showVerificationDialog(email);
+      final devCode = regRes['dev_verification_code'] as String?;
+      // Prompt email verification (with fallback code if email is unconfigured)
+      _showVerificationDialog(email, initialCode: devCode);
     } catch (e) {
       setState(() {
         _regLoading = false;
@@ -190,8 +201,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   }
 
   // Verification Dialog
-  void _showVerificationDialog(String email) {
-    final codeController = TextEditingController();
+  void _showVerificationDialog(String email, {String? initialCode}) {
+    final codeController = TextEditingController(text: initialCode ?? '');
     bool verifying = false;
     String? verifError;
 
@@ -462,7 +473,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             TextField(
               controller: serverController,
               decoration: const InputDecoration(
-                hintText: 'https://akremjobhunter-backend.onrender.com',
+                hintText: 'https://akremjobhunter.onrender.com',
                 prefixIcon: Icon(Icons.cloud_outlined),
               ),
             ),
@@ -492,6 +503,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppTheme.bgDark,
       body: Stack(
@@ -535,20 +547,41 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                             child: const Icon(Icons.radar_rounded, color: AppTheme.primary, size: 20),
                           ),
                           const SizedBox(width: 12),
-                          const Text(
-                            'akremjobhunter',
-                            style: TextStyle(
-                              fontSize: 19,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.1,
+                          GestureDetector(
+                            onTap: () {
+                              _secretTaps++;
+                              if (_secretTaps >= 5) {
+                                _secretTaps = 0;
+                                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DeveloperPanelScreen()));
+                              }
+                            },
+                            child: const Text(
+                              'akremjobhunter',
+                              style: TextStyle(
+                                fontSize: 19,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.1,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.settings_outlined, color: AppTheme.textMuted),
-                        tooltip: 'Server Connection',
-                        onPressed: _showServerConfigDialog,
+                      Row(
+                        children: [
+                          TextButton.icon(
+                            onPressed: () => LanguageSelectorSheet.show(context),
+                            icon: const Icon(Icons.language_rounded, size: 18, color: AppTheme.primary),
+                            label: Text(
+                              LanguageController.instance.currentLocale.languageCode.toUpperCase(),
+                              style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.settings_outlined, color: AppTheme.textMuted),
+                            tooltip: 'Server Connection',
+                            onPressed: _showServerConfigDialog,
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -591,9 +624,9 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                                       unselectedLabelColor: AppTheme.textMuted,
                                       labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                                       dividerColor: Colors.transparent,
-                                      tabs: const [
-                                        Tab(text: 'Sign In'),
-                                        Tab(text: 'Create Account'),
+                                      tabs: [
+                                        Tab(text: l10n.t('auth_sign_in')),
+                                        Tab(text: l10n.t('auth_create_account')),
                                       ],
                                     ),
                                   ),
@@ -604,8 +637,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                                     animation: _tabController,
                                     builder: (context, _) {
                                       return _tabController.index == 0
-                                          ? _buildSignInTab()
-                                          : _buildSignUpTab();
+                                          ? _buildSignInTab(l10n)
+                                          : _buildSignUpTab(l10n);
                                     },
                                   ),
                                 ],
@@ -642,15 +675,15 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   }
 
   // --- Sign In View
-  Widget _buildSignInTab() {
+  Widget _buildSignInTab(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextField(
           controller: _loginIdController,
-          decoration: const InputDecoration(
-            labelText: 'Username or Email',
-            prefixIcon: Icon(Icons.person_outline),
+          decoration: InputDecoration(
+            labelText: l10n.t('auth_username_email'),
+            prefixIcon: const Icon(Icons.person_outline),
           ),
         ),
         const SizedBox(height: 16),
@@ -658,7 +691,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           controller: _loginPassController,
           obscureText: _loginObscure,
           decoration: InputDecoration(
-            labelText: 'Password',
+            labelText: l10n.t('auth_password'),
             prefixIcon: const Icon(Icons.lock_outline),
             suffixIcon: IconButton(
               icon: Icon(_loginObscure ? Icons.visibility_off_outlined : Icons.visibility_outlined),
@@ -683,13 +716,13 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Text('Remember Me', style: TextStyle(fontSize: 12.5, color: AppTheme.textMuted)),
+                Text(l10n.t('auth_remember_me'), style: const TextStyle(fontSize: 12.5, color: AppTheme.textMuted)),
               ],
             ),
             TextButton(
               onPressed: _showForgotPasswordSheet,
               style: TextButton.styleFrom(padding: EdgeInsets.zero),
-              child: const Text('Forgot Password?', style: TextStyle(fontSize: 12.5, color: AppTheme.primary)),
+              child: Text(l10n.t('auth_forgot_password'), style: const TextStyle(fontSize: 12.5, color: AppTheme.primary)),
             ),
           ],
         ),
@@ -713,17 +746,17 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           onPressed: _loginLoading ? null : _handleLogin,
           child: _loginLoading
               ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
-              : const Text('Sign In'),
+              : Text(l10n.t('auth_sign_in')),
         ),
       ],
     );
   }
 
   // --- Sign Up View
-  Widget _buildSignUpTab() {
+  Widget _buildSignUpTab(AppLocalizations l10n) {
     final pass = _regPassController.text;
     final strength = _calculateStrength(pass);
-    final strengthLabel = _getStrengthLabel(strength);
+    final strengthLabel = _getStrengthLabel(strength, l10n);
     final strengthColor = _getStrengthColor(strength);
 
     return Column(
@@ -731,27 +764,34 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       children: [
         TextField(
           controller: _regUsernameController,
-          decoration: const InputDecoration(
-            labelText: 'Choose Username *',
-            prefixIcon: Icon(Icons.alternate_email),
+          decoration: InputDecoration(
+            labelText: l10n.t('auth_username'),
+            prefixIcon: const Icon(Icons.alternate_email),
           ),
         ),
         const SizedBox(height: 14),
         TextField(
           controller: _regEmailController,
           keyboardType: TextInputType.emailAddress,
-          decoration: const InputDecoration(
-            labelText: 'Email Address *',
-            prefixIcon: Icon(Icons.email_outlined),
+          decoration: InputDecoration(
+            labelText: l10n.t('auth_email'),
+            prefixIcon: const Icon(Icons.email_outlined),
           ),
         ),
         const SizedBox(height: 14),
         TextField(
           controller: _regFullNameController,
-          decoration: const InputDecoration(
-            labelText: 'Full Name (Optional)',
-            prefixIcon: Icon(Icons.badge_outlined),
+          decoration: InputDecoration(
+            labelText: l10n.t('auth_full_name'),
+            prefixIcon: const Icon(Icons.badge_outlined),
           ),
+        ),
+        const SizedBox(height: 14),
+        ArabCountryPickerField(
+          selectedCountry: _selectedArabCountry,
+          onCountryChanged: (c) => setState(() => _selectedArabCountry = c),
+          phoneController: _regPhoneController,
+          currentLang: LanguageController.instance.currentLocale.languageCode,
         ),
         const SizedBox(height: 14),
         TextField(
@@ -759,7 +799,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           obscureText: _regObscure,
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
-            labelText: 'Choose Password *',
+            labelText: l10n.t('auth_choose_password'),
             prefixIcon: const Icon(Icons.lock_outline),
             suffixIcon: IconButton(
               icon: Icon(_regObscure ? Icons.visibility_off_outlined : Icons.visibility_outlined),
@@ -795,7 +835,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           controller: _regConfirmPassController,
           obscureText: _regConfirmObscure,
           decoration: InputDecoration(
-            labelText: 'Confirm Password *',
+            labelText: l10n.t('auth_confirm_password'),
             prefixIcon: const Icon(Icons.check_circle_outline),
             suffixIcon: IconButton(
               icon: Icon(_regConfirmObscure ? Icons.visibility_off_outlined : Icons.visibility_outlined),
@@ -823,7 +863,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           onPressed: _regLoading ? null : _handleRegister,
           child: _regLoading
               ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
-              : const Text('Create Account'),
+              : Text(l10n.t('auth_create_account')),
         ),
       ],
     );

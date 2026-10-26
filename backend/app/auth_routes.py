@@ -27,6 +27,14 @@ class RegisterIn(BaseModel):
     email: str
     password: str = Field(..., min_length=6)
     full_name: Optional[str] = None
+    country_code: Optional[str] = None
+    phone: Optional[str] = None
+
+
+class ProfileUpdateIn(BaseModel):
+    full_name: Optional[str] = None
+    country_code: Optional[str] = None
+    phone: Optional[str] = None
 
 
 class LoginIn(BaseModel):
@@ -63,6 +71,9 @@ def _user_dict(u: User) -> dict[str, Any]:
         "id": u.id,
         "username": u.username,
         "email": u.email,
+        "full_name": u.full_name or "",
+        "country_code": u.country_code or "TN",
+        "phone": u.phone or "",
         "role": u.role,
         "is_active": u.is_active,
         "is_verified": u.is_verified,
@@ -117,6 +128,9 @@ def register(body: RegisterIn, request: Request, db: Session = Depends(get_db)) 
         username=username,
         email=email,
         password_hash=auth.hash_password(body.password),
+        full_name=body.full_name.strip() if body.full_name else None,
+        country_code=body.country_code.strip().upper() if body.country_code else "TN",
+        phone=body.phone.strip() if body.phone else None,
         role=user_role,
         is_active=True,
         is_verified=False,
@@ -131,6 +145,7 @@ def register(body: RegisterIn, request: Request, db: Session = Depends(get_db)) 
         store.put("full_name", body.full_name.strip())
 
     # Try sending email verification if mailer is configured
+    email_sent = False
     try:
         if store.get("gmail_address") and store.get("gmail_app_password"):
             mailer.send_email(
@@ -138,6 +153,7 @@ def register(body: RegisterIn, request: Request, db: Session = Depends(get_db)) 
                 subject="akremjobhunter - Email Verification Code",
                 body_text=f"Welcome to akremjobhunter.\n\nYour 6-digit verification code is: {verif_code}\n\nThis code expires in 30 minutes.",
             )
+            email_sent = True
     except Exception as exc:
         log.warning(f"Could not send email verification: {exc}")
 
@@ -145,11 +161,17 @@ def register(body: RegisterIn, request: Request, db: Session = Depends(get_db)) 
     ip = request.client.host if request.client else "unknown"
     tokens = auth.create_tokens(db, user, remember_me=False, user_agent=user_agent, ip_address=ip)
 
-    return {
+    response_payload = {
         "user": _user_dict(user),
         "tokens": tokens,
         "message": "Account created successfully. Please verify your email.",
+        "email_sent": email_sent,
     }
+    # If email delivery was not possible (e.g. SMTP not set up yet), provide the code directly
+    if not email_sent:
+        response_payload["dev_verification_code"] = verif_code
+
+    return response_payload
 
 
 @router.post("/login")
@@ -158,19 +180,34 @@ def login(body: LoginIn, request: Request, db: Session = Depends(get_db)) -> dic
     user = db.scalar(select(User).where(or_(User.username == query, User.email == query)))
 
     if not user:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid credentials")
-
-    # Check lockout
-    auth.check_account_locked(user)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid username or password")
 
     if not user.is_active:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Account has been deactivated")
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Account has been disabled")
 
+    # Check lock
+    if user.locked_until and user.locked_until > utcnow():
+        remaining = int((user.locked_until - utcnow()).total_seconds() / 60)
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            f"Account locked due to multiple failed attempts. Try again in {remaining + 1} minutes.",
+        )
+
+    # Verify password
     if not auth.verify_password(body.password, user.password_hash):
-        auth.record_login_attempt(db, user, success=False)
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid credentials")
+        user.failed_login_attempts += 1
+        max_attempts = store.get("auth_lockout_attempts", 5)
+        if user.failed_login_attempts >= max_attempts:
+            lockout_min = store.get("auth_lockout_minutes", 15)
+            user.locked_until = utcnow() + timedelta(minutes=lockout_min)
+        db.commit()
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid username or password")
 
-    auth.record_login_attempt(db, user, success=True)
+    # Success: reset lockout, update last_login
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    user.last_login_at = utcnow()
+    db.commit()
 
     user_agent = request.headers.get("user-agent")
     ip = request.client.host if request.client else "unknown"
@@ -183,8 +220,15 @@ def login(body: LoginIn, request: Request, db: Session = Depends(get_db)) -> dic
 
 
 @router.post("/refresh")
-def refresh_token(body: RefreshIn, db: Session = Depends(get_db)) -> dict[str, Any]:
-    return auth.refresh_access_token(db, body.refresh_token)
+def refresh(body: RefreshIn, request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
+    user_agent = request.headers.get("user-agent")
+    ip = request.client.host if request.client else "unknown"
+    new_tokens = auth.rotate_refresh_token(
+        db, body.refresh_token, user_agent=user_agent, ip_address=ip
+    )
+    if not new_tokens:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid or expired refresh token")
+    return new_tokens
 
 
 @router.post("/logout")
@@ -198,6 +242,28 @@ def get_me(user: User = Depends(get_current_user)) -> dict[str, Any]:
     if not user:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")
     return _user_dict(user)
+
+
+@router.put("/profile")
+def update_profile(
+    body: ProfileUpdateIn,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    if not user:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")
+
+    if body.full_name is not None:
+        user.full_name = body.full_name.strip()
+        store.put("full_name", user.full_name)
+    if body.country_code is not None:
+        user.country_code = body.country_code.strip().upper()
+    if body.phone is not None:
+        user.phone = body.phone.strip()
+
+    db.commit()
+    db.refresh(user)
+    return {"message": "Profile updated successfully", "user": _user_dict(user)}
 
 
 @router.post("/change-password")
@@ -248,7 +314,6 @@ def forgot_password(body: ForgotPasswordIn, db: Session = Depends(get_db)) -> di
         except Exception as exc:
             log.warning(f"Failed to send password reset email: {exc}")
 
-    # Always return 200 to prevent email enumeration
     return {"message": "If this email is registered, password reset instructions have been sent."}
 
 
@@ -318,6 +383,7 @@ def resend_verification(
     user.verification_code_expires_at = utcnow() + timedelta(minutes=15)
     db.commit()
 
+    email_sent = False
     try:
         if store.get("gmail_address") and store.get("gmail_app_password"):
             mailer.send_email(
@@ -325,7 +391,11 @@ def resend_verification(
                 subject="akremjobhunter - Email Verification Code",
                 body_text=f"Your new verification code is: {verif_code}\n\nValid for 15 minutes.",
             )
+            email_sent = True
     except Exception as exc:
         log.warning(f"Could not send email verification: {exc}")
 
-    return {"message": "Verification code resent"}
+    res = {"message": "Verification code resent", "email_sent": email_sent}
+    if not email_sent:
+        res["dev_verification_code"] = verif_code
+    return res

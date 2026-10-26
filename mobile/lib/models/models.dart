@@ -100,6 +100,7 @@ class ApplicationItem {
   final String? eligibilityEvidence;
   final List<dynamic>? missingSkills;
   final List<dynamic>? events;
+  final Map<String, dynamic>? probability;
 
   ApplicationItem({
     required this.id,
@@ -124,6 +125,7 @@ class ApplicationItem {
     this.eligibilityEvidence,
     this.missingSkills,
     this.events,
+    this.probability,
   });
 
   factory ApplicationItem.fromJson(Map<String, dynamic> json) {
@@ -151,6 +153,7 @@ class ApplicationItem {
       eligibilityEvidence: job['eligibility_evidence'],
       missingSkills: job['missing_skills'],
       events: json['events'],
+      probability: json['probability'] as Map<String, dynamic>?,
     );
   }
 }

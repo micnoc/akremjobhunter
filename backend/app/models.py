@@ -47,6 +47,7 @@ class Cv(Base):
     __tablename__ = "cvs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     label: Mapped[str] = mapped_column(String(200))
     original_name: Mapped[str] = mapped_column(String(300))
     stored_name: Mapped[str] = mapped_column(String(300), unique=True)
@@ -166,6 +167,9 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
+    full_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    country_code: Mapped[str | None] = mapped_column(String(10), nullable=True)  # e.g. "TN", "DZ", "EG"
+    phone: Mapped[str | None] = mapped_column(String(50), nullable=True)  # e.g. "+216 98 123 456"
     role: Mapped[str] = mapped_column(String(20), default="admin")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)

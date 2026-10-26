@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import 'auth_screen.dart';
 import '../main.dart';
+import '../l10n/app_localizations.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -156,8 +157,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: AppTheme.border),
                         ),
-                        child: const Text(
-                          'AUTONOMOUS 24/7 AI RECRUITMENT AGENT',
+                        child: Text(
+                          AppLocalizations.of(context).t('app_tagline'),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: AppTheme.primary,

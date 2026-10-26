@@ -1,7 +1,10 @@
-﻿*.apk
-build/
-.dart_tool/
-@"
 *.apk
 build/
 .dart_tool/
+__pycache__/
+*.pyc
+*.db
+*.db-shm
+*.db-wal
+.env
+.venv/

@@ -196,7 +196,15 @@ def evaluate_job(job: dict, cvs: list[dict]) -> JobEvaluation:
         f"Title: {job['title']}\nCompany: {job['company']}\nCountry: {job['country']}\nLocation: {job['location']}\n"
         f"Description:\n{job['description'][:15000]}\n\n## CANDIDATE CVS\n{cv_block}"
     )
-    return _generate(prompt, _SCREEN_SYSTEM, JobEvaluation)  # type: ignore[return-value]
+    try:
+        if not store.get("ai_api_key"):
+            from .local_ai import LocalIntelligentEngine
+            return LocalIntelligentEngine.evaluate_job(job, cvs)
+        return _generate(prompt, _SCREEN_SYSTEM, JobEvaluation)  # type: ignore[return-value]
+    except Exception as exc:
+        log.warning("Gemini evaluate_job error (%s), fallback to LocalIntelligentEngine", exc)
+        from .local_ai import LocalIntelligentEngine
+        return LocalIntelligentEngine.evaluate_job(job, cvs)
 
 
 _WRITER_SYSTEM = """You write concise, professional job application emails.
@@ -215,7 +223,15 @@ def write_cover_letter(job: dict, cv_text: str, language: str, signature: str) -
         f"Location: {job['location']} ({job['country']})\nReference: {job.get('external_id', '')}\n"
         f"Posting:\n{job['description'][:8000]}\n\nCV TEXT:\n{cv_text[:12000]}\n\nSIGNATURE:\n{signature}"
     )
-    return _generate(prompt, _WRITER_SYSTEM, CoverLetter, temperature=0.4)  # type: ignore[return-value]
+    try:
+        if not store.get("ai_api_key"):
+            from .local_ai import LocalIntelligentEngine
+            return LocalIntelligentEngine.write_cover_letter(job, cv_text, language, signature)
+        return _generate(prompt, _WRITER_SYSTEM, CoverLetter, temperature=0.4)  # type: ignore[return-value]
+    except Exception as exc:
+        log.warning("Gemini write_cover_letter error (%s), fallback to LocalIntelligentEngine", exc)
+        from .local_ai import LocalIntelligentEngine
+        return LocalIntelligentEngine.write_cover_letter(job, cv_text, language, signature)
 
 
 def write_follow_up(job: dict, language: str, signature: str) -> str:
@@ -242,7 +258,15 @@ def triage_email(email_text: str, app_ctx: dict, cv_text: str, signature: str) -
         f"Application context: position '{app_ctx['title']}' at {app_ctx['company']} ({app_ctx['country']}).\n\n"
         f"EMAIL:\n{email_text[:10000]}\n\nCV TEXT:\n{cv_text[:8000]}\n\nSIGNATURE:\n{signature}"
     )
-    return _generate(prompt, _TRIAGE_SYSTEM, EmailTriage)  # type: ignore[return-value]
+    try:
+        if not store.get("ai_api_key"):
+            from .local_ai import LocalIntelligentEngine
+            return LocalIntelligentEngine.triage_email(email_text, app_ctx, cv_text, signature)
+        return _generate(prompt, _TRIAGE_SYSTEM, EmailTriage)  # type: ignore[return-value]
+    except Exception as exc:
+        log.warning("Gemini triage_email error (%s), fallback to LocalIntelligentEngine", exc)
+        from .local_ai import LocalIntelligentEngine
+        return LocalIntelligentEngine.triage_email(email_text, app_ctx, cv_text, signature)
 
 
 def research_company(company: str, country: str) -> str:

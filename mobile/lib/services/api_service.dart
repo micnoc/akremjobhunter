@@ -10,7 +10,7 @@ class ApiService {
   static const String _keyCurrentUser = 'current_user';
   static const String _keyRememberMe = 'remember_me';
 
-  static const String defaultCloudUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'https://akremjobhunter-backend.onrender.com');
+  static const String defaultCloudUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'https://akremjobhunter.onrender.com');
   static String serverUrl = defaultCloudUrl;
   static String accessToken = '';
   static String refreshToken = '';
@@ -154,6 +154,8 @@ class ApiService {
     required String email,
     required String password,
     String? fullName,
+    String? countryCode,
+    String? phone,
   }) async {
     final res = await http.post(
       Uri.parse('$serverUrl/api/v1/auth/register'),
@@ -163,6 +165,8 @@ class ApiService {
         'email': email.trim(),
         'password': password,
         if (fullName != null && fullName.isNotEmpty) 'full_name': fullName.trim(),
+        if (countryCode != null && countryCode.isNotEmpty) 'country_code': countryCode.trim(),
+        if (phone != null && phone.isNotEmpty) 'phone': phone.trim(),
       }),
     );
 
@@ -506,5 +510,105 @@ class ApiService {
       return jsonDecode(res.body)['result'] ?? 'Started';
     }
     throw Exception('Engine command failed');
+  }
+
+  // ------------------------------------------------ Admin & Developer Panel
+  static Future<Map<String, dynamic>> getAdminOverview() async {
+    final res = await http.get(
+      Uri.parse('$serverUrl/api/v1/admin/overview'),
+      headers: {
+        ..._headers,
+        'X-Admin-Key': 'akrem_admin_secret_2026',
+      },
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body);
+    }
+    throw Exception('Failed to load admin overview: ${res.body}');
+  }
+
+  static Future<Map<String, dynamic>> getAdminUsers({int limit = 100, int offset = 0}) async {
+    final res = await http.get(
+      Uri.parse('$serverUrl/api/v1/admin/users?limit=$limit&offset=$offset'),
+      headers: {
+        ..._headers,
+        'X-Admin-Key': 'akrem_admin_secret_2026',
+      },
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body);
+    }
+    throw Exception('Failed to load admin users: ${res.body}');
+  }
+
+  static Future<Map<String, dynamic>> getAdminUserDetail(int userId) async {
+    final res = await http.get(
+      Uri.parse('$serverUrl/api/v1/admin/users/$userId/detail'),
+      headers: {
+        ..._headers,
+        'X-Admin-Key': 'akrem_admin_secret_2026',
+      },
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body);
+    }
+    throw Exception('Failed to load candidate details: ${res.body}');
+  }
+
+  static Future<String> triggerAdminCollector() async {
+    final res = await http.post(
+      Uri.parse('$serverUrl/api/v1/admin/trigger-collector'),
+      headers: {
+        ..._headers,
+        'X-Admin-Key': 'akrem_admin_secret_2026',
+      },
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body)['message'] ?? 'Discovery initiated';
+    }
+    throw Exception('Failed to trigger collector');
+  }
+
+  static Future<String> triggerAdminEvaluator() async {
+    final res = await http.post(
+      Uri.parse('$serverUrl/api/v1/admin/trigger-evaluator'),
+      headers: {
+        ..._headers,
+        'X-Admin-Key': 'akrem_admin_secret_2026',
+      },
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body)['message'] ?? 'Evaluator initiated';
+    }
+    throw Exception('Failed to trigger evaluator');
+  }
+
+  static Future<Map<String, dynamic>> updateProfile({
+    String? fullName,
+    String? countryCode,
+    String? phone,
+  }) async {
+    final Map<String, dynamic> bodyMap = {};
+    if (fullName != null) bodyMap['full_name'] = fullName;
+    if (countryCode != null) bodyMap['country_code'] = countryCode;
+    if (phone != null) bodyMap['phone'] = phone;
+
+    final res = await http.put(
+      Uri.parse('$serverUrl/api/v1/auth/profile'),
+      headers: _headers,
+      body: jsonEncode(bodyMap),
+    );
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      if (data['user'] != null) {
+        currentUser = data['user'];
+        final prefs = await SharedPreferences.getInstance();
+        if (rememberMe) {
+          await prefs.setString(_keyCurrentUser, jsonEncode(currentUser));
+        }
+      }
+      return data;
+    }
+    throw Exception('Failed to update profile');
   }
 }

@@ -206,6 +206,21 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primary),
                     ),
                   ),
+                if (item.probability != null) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFF10B981)),
+                    ),
+                    child: Text(
+                      '🎯 ${item.probability!['total_probability'] ?? 75}% احتمال قبول',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                    ),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 4),
@@ -223,6 +238,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 _buildBadge(item.method == 'EMAIL' ? 'Direct Email' : 'Official Portal', Icons.send_rounded),
                 if (item.cvLabel != null) _buildBadge('CV: ${item.cvLabel}', Icons.description_outlined),
                 if (item.source != null) _buildBadge(item.source!, Icons.public),
+                if (item.probability?['immigration_pathway'] != null)
+                  _buildBadge('🛂 ${item.probability!['immigration_pathway']}', Icons.card_membership_outlined),
               ],
             ),
 

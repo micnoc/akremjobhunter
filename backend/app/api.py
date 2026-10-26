@@ -16,6 +16,7 @@ from . import settings_store as store
 from .config import get_settings
 from .db import get_db
 from .models import Application, AppStatus, Cv, EmailEvent, EngineRun, Job, JobStatus, utcnow
+from .probability_engine import OfferProbabilityEngine
 from .security import require_access
 from .sources import adzuna
 
@@ -37,12 +38,27 @@ def _iso(dt):
 
 def _app_summary(a: Application) -> dict:
     j = a.job
+    missing_cnt = 0
+    try:
+        missing_cnt = len(json.loads(j.missing_skills or "[]"))
+    except Exception:
+        pass
+    prob = OfferProbabilityEngine.calculate(
+        match_score=j.match_score,
+        eligibility=j.eligibility,
+        country=j.country,
+        job_language=j.language,
+        cv_language=a.cv.language if a.cv else "en",
+        has_direct_email=bool(j.apply_email or j.recruiter_email),
+        missing_skills_count=missing_cnt,
+    )
     return {
         "id": a.id, "status": a.status, "method": a.method, "title": j.title, "company": j.company,
         "country": j.country, "location": j.location, "score": j.match_score, "eligibility": j.eligibility,
         "cv_label": a.cv.label if a.cv else None, "created_at": _iso(a.created_at), "sent_at": _iso(a.sent_at),
         "url": j.url, "source": j.source, "last_response_at": _iso(a.last_response_at),
         "response_summary": a.response_summary,
+        "probability": prob,
     }
 
 

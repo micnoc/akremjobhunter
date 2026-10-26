@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import 'about_screen.dart';
+import 'developer_panel_screen.dart';
+import '../widgets/arab_country_picker.dart';
+import '../l10n/app_localizations.dart';
+import '../widgets/language_selector.dart';
 
 class SettingsScreen extends StatefulWidget {
   final VoidCallback onDisconnect;
@@ -18,6 +22,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   final _fullNameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  ArabCountry _selectedArabCountry = getArabCountry('TN');
+  int _secretTaps = 0;
   final _emailCtrl = TextEditingController();
   final _gmailPassCtrl = TextEditingController();
   final _aiKeyCtrl = TextEditingController();
@@ -53,6 +59,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         _fullNameCtrl.text = s['full_name'] ?? '';
         _phoneCtrl.text = s['phone'] ?? '';
+        final user = ApiService.currentUser ?? {};
+        if (user['country_code'] != null && user['country_code'].toString().isNotEmpty) {
+          _selectedArabCountry = getArabCountry(user['country_code'].toString());
+        }
         _emailCtrl.text = s['gmail_address'] ?? '';
         _tgChatCtrl.text = s['telegram_chat_id'] ?? '';
         _waPhoneCtrl.text = s['whatsapp_phone'] ?? '';
@@ -101,6 +111,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (_waKeyCtrl.text.isNotEmpty) payload['callmebot_apikey'] = _waKeyCtrl.text;
 
       await ApiService.saveSettings(payload);
+      try {
+        await ApiService.updateProfile(
+          fullName: _fullNameCtrl.text.trim(),
+          countryCode: _selectedArabCountry.code,
+          phone: _phoneCtrl.text.trim(),
+        );
+      } catch (_) {}
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Settings saved securely on Cloud Server')));
       }
@@ -242,10 +259,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final email = user['email'] ?? '';
     final role = (user['role'] ?? 'ADMIN').toString().toUpperCase();
     final isVerified = user['is_verified'] == true;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings & Configuration'),
+        title: Text(l10n.t('set_title')),
         actions: [
           IconButton(
             onPressed: _saving ? null : _save,
@@ -257,6 +275,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // Developer Panel Quick Access for Admins
+          if (role == 'ADMIN') ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0284C7), Color(0xFF0D9488)],
+                ),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(color: const Color(0xFF0284C7).withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4)),
+                ],
+              ),
+              child: ListTile(
+                leading: const Text('⚡', style: TextStyle(fontSize: 26)),
+                title: const Text('لوحة تحكم المطورين والإدارة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                subtitle: const Text('مرصد المترشحين، السير الذاتية، وإحصائيات السحابة 24/7', style: TextStyle(color: Colors.white70, fontSize: 11.5)),
+                trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+                onTap: () {
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DeveloperPanelScreen()));
+                },
+              ),
+            ),
+          ],
           // 1. User Profile & Security Card
           Container(
             padding: const EdgeInsets.all(18),
@@ -324,14 +366,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     TextButton.icon(
                       onPressed: _showChangePasswordDialog,
                       icon: const Icon(Icons.vpn_key_outlined, size: 16, color: AppTheme.primary),
-                      label: const Text('Change Password', style: TextStyle(color: AppTheme.primary, fontSize: 13)),
+                      label: Text(l10n.t('set_change_pass'), style: TextStyle(color: AppTheme.primary, fontSize: 13)),
                     ),
                     TextButton.icon(
                       onPressed: () {
                         Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AboutScreen()));
                       },
                       icon: const Icon(Icons.info_outline, size: 16, color: AppTheme.textMuted),
-                      label: const Text('About Platform', style: TextStyle(color: AppTheme.textMuted, fontSize: 13)),
+                      label: Text(l10n.t('set_about'), style: TextStyle(color: AppTheme.textMuted, fontSize: 13)),
                     ),
                   ],
                 ),
@@ -341,14 +383,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // Candidate Identity
-          _buildSection('CANDIDATE SIGNATURE & CONTACT'),
+          // Language Selection Card
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: AppTheme.glassCardDecoration(radius: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.language_rounded, color: AppTheme.primary, size: 22),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.t('set_language'),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                        ),
+                        Text(
+                          LanguageController.instance.currentLocale.languageCode == 'ar'
+                              ? 'العربية (RTL) 🇹🇳'
+                              : (LanguageController.instance.currentLocale.languageCode == 'fr'
+                                  ? 'Français 🇫🇷'
+                                  : 'English 🇬🇧'),
+                          style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                OutlinedButton(
+                  onPressed: () => LanguageSelectorSheet.show(context),
+                  style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                  child: const Text('Change / تغيير', style: TextStyle(fontSize: 12)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          _buildSection(l10n.t('set_candidate')),
           TextField(controller: _fullNameCtrl, decoration: const InputDecoration(labelText: 'Full Name (Signature)')),
-          const SizedBox(height: 10),
-          TextField(controller: _phoneCtrl, decoration: const InputDecoration(labelText: 'Phone Number (International format)')),
+          const SizedBox(height: 12),
+          ArabCountryPickerField(
+            selectedCountry: _selectedArabCountry,
+            onCountryChanged: (c) => setState(() => _selectedArabCountry = c),
+            phoneController: _phoneCtrl,
+            currentLang: LanguageController.instance.currentLocale.languageCode,
+          ),
           const SizedBox(height: 24),
 
           // Gmail Bridge
-          _buildSection('GMAIL BRIDGE (IMAP & SMTP 24/7)'),
+          _buildSection(l10n.t('set_gmail')),
           TextField(controller: _emailCtrl, decoration: const InputDecoration(labelText: 'Gmail Address')),
           const SizedBox(height: 10),
           TextField(
@@ -368,7 +455,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // AI Engine
-          _buildSection('GEMINI AI ENGINE'),
+          _buildSection(l10n.t('set_ai')),
           TextField(
             controller: _aiKeyCtrl,
             obscureText: true,
@@ -395,7 +482,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // Telegram
-          _buildSection('TELEGRAM NOTIFIER (CRITICAL ALERTS ONLY)'),
+          _buildSection(l10n.t('set_telegram')),
           TextField(
             controller: _tgTokenCtrl,
             obscureText: true,
@@ -415,7 +502,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // WhatsApp
-          _buildSection('WHATSAPP ALERTS (CALLMEBOT)'),
+          _buildSection(l10n.t('set_whatsapp')),
           TextField(controller: _waPhoneCtrl, decoration: const InputDecoration(labelText: 'WhatsApp Phone (+CountryCode...)')),
           const SizedBox(height: 10),
           TextField(
@@ -435,7 +522,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // Engine Controls
-          _buildSection('ENGINE OPERATION & PACING'),
+          _buildSection(l10n.t('set_engine')),
           SwitchListTile(
             title: const Text('Pause Autonomous Engine', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             subtitle: const Text('Suspends automated discovering, sending, and email checking.', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
@@ -468,7 +555,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // Target Countries
-          _buildSection('TARGET COUNTRIES'),
+          _buildSection(l10n.t('set_countries')),
           Wrap(
             spacing: 6,
             runSpacing: 6,
@@ -499,7 +586,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: _saving
                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                 : const Icon(Icons.check_rounded),
-            label: Text(_saving ? 'Saving...' : 'Save Settings on Cloud Server'),
+            label: Text(_saving ? '...' : l10n.t('save')),
           ),
           const SizedBox(height: 16),
 
@@ -507,7 +594,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextButton.icon(
             onPressed: widget.onDisconnect,
             icon: const Icon(Icons.logout_rounded, color: AppTheme.danger, size: 16),
-            label: const Text('Sign Out & Disconnect', style: TextStyle(color: AppTheme.danger)),
+            label: Text(l10n.t('set_sign_out'), style: TextStyle(color: AppTheme.danger)),
+          ),
+          const SizedBox(height: 20),
+          GestureDetector(
+            onTap: () {
+              _secretTaps++;
+              if (_secretTaps >= 5) {
+                _secretTaps = 0;
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DeveloperPanelScreen()));
+              }
+            },
+            child: const Center(
+              child: Text(
+                'akremjobhunter Cloud v3.0.0 (Tap 5x for Developer Mode)',
+                style: TextStyle(color: Colors.white24, fontSize: 11),
+              ),
+            ),
           ),
           const SizedBox(height: 30),
         ],
