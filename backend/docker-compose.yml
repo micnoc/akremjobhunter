@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  backend:
+    build: .
+    container_name: akremjobhunter-engine
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - akremjobhunter_data:/data
+    env_file:
+      - .env
+
+volumes:
+  akremjobhunter_data:
+    driver: local

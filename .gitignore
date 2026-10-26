@@ -1,0 +1,7 @@
+﻿*.apk
+build/
+.dart_tool/
+@"
+*.apk
+build/
+.dart_tool/
