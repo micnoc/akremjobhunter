@@ -1,3 +1,4 @@
+import '../l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../services/api_service.dart';
@@ -12,6 +13,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  AppLocalizations get l10n => AppLocalizations.of(context);
   DashboardData? _data;
   bool _loading = true;
   String? _error;
@@ -81,7 +83,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ElevatedButton.icon(
                   onPressed: _load,
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Retry Connection'),
+                  label: Text(l10n.t('cancel') == 'إلغاء' ? 'إعادة المحاولة' : 'Retry'),
                 ),
               ],
             ),
@@ -90,6 +92,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
+    // l10n getter used
     final d = _data!;
     final counts = d.counts;
     final reviewCount = counts['review'] ?? 0;
@@ -97,7 +100,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('akremjobhunter'),
+        title: Text(l10n.t('app_name')),
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 12),
@@ -117,7 +120,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  d.paused ? 'PAUSED' : '24/7 ONLINE',
+                  d.paused ? l10n.t('dash_engine_paused') : l10n.t('dash_engine_running'),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -163,8 +166,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 20),
 
             // Recent Submissions
-            const Text(
-              'RECENT SUBMISSIONS & MATCHES',
+            Text(l10n.t('dash_recent'),
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -194,8 +196,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'DAILY ANTI-BAN THROTTLE',
+              Text(l10n.t('dash_quota'),
                 style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 1.1),
               ),
               Text(
@@ -259,7 +260,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             ),
-            child: const Text('Review', style: TextStyle(fontSize: 12)),
+            child: Text(l10n.t('dash_review_action'), style: TextStyle(fontSize: 12)),
           ),
         ],
       ),

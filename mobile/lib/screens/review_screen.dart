@@ -1,3 +1,4 @@
+import '../l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/models.dart';
@@ -12,6 +13,7 @@ class ReviewScreen extends StatefulWidget {
 }
 
 class _ReviewScreenState extends State<ReviewScreen> {
+  AppLocalizations get l10n => AppLocalizations.of(context);
   List<ApplicationItem> _items = [];
   bool _loading = true;
   String? _error;
@@ -117,14 +119,14 @@ class _ReviewScreenState extends State<ReviewScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.t('cancel'))),
             ElevatedButton(
               onPressed: () async {
                 await ApiService.updateCoverLetter(item.id, subjectCtrl.text, bodyCtrl.text);
                 if (ctx.mounted) Navigator.pop(ctx);
                 _load();
               },
-              child: const Text('Save Changes'),
+              child: Text(l10n.t('save')),
             ),
           ],
         ),
@@ -138,9 +140,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // l10n getter used
     return Scaffold(
       appBar: AppBar(
-        title: const Text('1-Click Review Queue'),
+        title: Text(l10n.t('review_title')),
         actions: [
           IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
         ],
@@ -153,13 +156,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Icon(Icons.done_all_rounded, size: 54, color: AppTheme.secondary),
                           SizedBox(height: 12),
                           Text('Review Queue is Clear!', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                           SizedBox(height: 4),
                           Text(
-                            'All eligible international matches have been reviewed or queued.',
+                            l10n.t('review_empty_sub'),
                             style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
                           ),
                         ],
@@ -253,25 +256,25 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 OutlinedButton.icon(
                   onPressed: () => _showLetterDialog(item),
                   icon: const Icon(Icons.edit_note_rounded, size: 16),
-                  label: const Text('Letter', style: TextStyle(fontSize: 11)),
+                  label: Text(l10n.t('review_edit_letter'), style: TextStyle(fontSize: 11)),
                 ),
                 const Spacer(),
                 TextButton(
                   onPressed: () => _act(item, 'skip'),
-                  child: const Text('Skip', style: TextStyle(color: AppTheme.textMuted, fontSize: 12)),
+                  child: Text(l10n.t('skip'), style: TextStyle(color: AppTheme.textMuted, fontSize: 12)),
                 ),
                 const SizedBox(width: 6),
                 if (item.method == 'EMAIL')
                   ElevatedButton.icon(
                     onPressed: () => _act(item, 'send'),
                     icon: const Icon(Icons.send_rounded, size: 14),
-                    label: const Text('Send Email', style: TextStyle(fontSize: 12)),
+                    label: Text(l10n.t('review_send_now'), style: TextStyle(fontSize: 12)),
                   )
                 else
                   ElevatedButton.icon(
                     onPressed: () => _openPortal(item),
                     icon: const Icon(Icons.open_in_new_rounded, size: 14),
-                    label: const Text('Open & Submit', style: TextStyle(fontSize: 12)),
+                    label: Text(l10n.t('review_open_portal'), style: TextStyle(fontSize: 12)),
                   ),
               ],
             ),

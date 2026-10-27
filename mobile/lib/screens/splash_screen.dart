@@ -114,24 +114,30 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     children: [
                       // Glowing Emblem Border
                       Container(
-                        width: 76,
-                        height: 76,
+                        width: 86,
+                        height: 86,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: AppTheme.surface.withValues(alpha: 0.7),
-                          border: Border.all(color: AppTheme.primary, width: 2),
+                          border: Border.all(color: AppTheme.primary, width: 2.5),
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primary.withValues(alpha: 0.35),
-                              blurRadius: 28,
+                              color: AppTheme.primary.withValues(alpha: 0.45),
+                              blurRadius: 30,
                               spreadRadius: 4,
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.radar_rounded,
-                          size: 42,
-                          color: AppTheme.primary,
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/branding/app_badge.jpg',
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => const Icon(
+                              Icons.radar_rounded,
+                              size: 42,
+                              color: AppTheme.primary,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),

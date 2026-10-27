@@ -1,3 +1,4 @@
+import '../l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/models.dart';
@@ -12,6 +13,7 @@ class ApplicationsScreen extends StatefulWidget {
 }
 
 class _ApplicationsScreenState extends State<ApplicationsScreen> {
+  AppLocalizations get l10n => AppLocalizations.of(context);
   String _selectedBucket = 'all';
   List<ApplicationItem> _items = [];
   bool _loading = true;
@@ -152,7 +154,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                               launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
                             },
                             icon: const Icon(Icons.picture_as_pdf_rounded, size: 16, color: Colors.black),
-                            label: const Text('Download Interview Prep PDF', style: TextStyle(color: Colors.black, fontSize: 12)),
+                            label: Text(l10n.t('mem_download_prep'), style: TextStyle(color: Colors.black, fontSize: 12)),
                           ),
                         ],
                       ],
@@ -164,7 +166,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
               // Cover letter
               if (full.coverLetter != null && full.coverLetter!.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                const Text('SUBMITTED COVER LETTER', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+                Text(l10n.t('review_edit_letter'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -232,9 +234,10 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // l10n getter used
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Applications Memory Log'),
+        title: Text(l10n.t('mem_title')),
         actions: [
           IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
         ],

@@ -1,3 +1,4 @@
+import '../l10n/app_localizations.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../models/models.dart';
@@ -12,6 +13,7 @@ class CvVaultScreen extends StatefulWidget {
 }
 
 class _CvVaultScreenState extends State<CvVaultScreen> {
+  AppLocalizations get l10n => AppLocalizations.of(context);
   List<CvItem> _cvs = [];
   bool _loading = true;
   bool _uploading = false;
@@ -132,9 +134,10 @@ class _CvVaultScreenState extends State<CvVaultScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // l10n getter used
     return Scaffold(
       appBar: AppBar(
-        title: const Text('CV Vault'),
+        title: Text(l10n.t('cv_title')),
         actions: [
           IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
         ],
@@ -150,7 +153,7 @@ class _CvVaultScreenState extends State<CvVaultScreen> {
                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
               )
             : const Icon(Icons.upload_file_rounded),
-        label: Text(_uploading ? 'Profiling CV...' : 'Upload CV (PDF)'),
+        label: Text(_uploading ? 'Profiling CV...' : l10n.t('cv_upload')),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
@@ -165,22 +168,21 @@ class _CvVaultScreenState extends State<CvVaultScreen> {
                           children: [
                             const Icon(Icons.folder_open_rounded, size: 64, color: AppTheme.textMuted),
                             const SizedBox(height: 16),
-                            const Text(
-                              'Your CV Vault is Empty',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            Text(
+                              l10n.t('cv_empty'),
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 8),
-                            const Text(
-                              'Upload your specialized CVs (e.g. Heavy Transport EN/FR, CNC/CAD EN/FR). '
-                              'The AI will strictly ground every application in your actual CV text.',
+                            Text(
+                              l10n.t('cv_empty_sub'),
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: AppTheme.textMuted, fontSize: 13),
+                              style: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
                             ),
                             const SizedBox(height: 24),
                             ElevatedButton.icon(
                               onPressed: _pickAndUpload,
                               icon: const Icon(Icons.upload_file_rounded),
-                              label: const Text('Upload Your First CV (PDF)'),
+                              label: Text(l10n.t('cv_upload')),
                             ),
                           ],
                         ),

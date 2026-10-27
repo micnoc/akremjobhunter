@@ -1,3 +1,4 @@
+import '../l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
@@ -10,6 +11,7 @@ class InsightsScreen extends StatefulWidget {
 }
 
 class _InsightsScreenState extends State<InsightsScreen> {
+  AppLocalizations get l10n => AppLocalizations.of(context);
   Map<String, dynamic>? _data;
   bool _loading = true;
   String? _error;
@@ -41,6 +43,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // l10n getter used
     if (_loading && _data == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
@@ -59,7 +62,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Insights & Geographic Demand'),
+        title: Text(l10n.t('ins_title')),
         actions: [
           IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
         ],
@@ -70,8 +73,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             // Country Heatmap Table
-            const Text(
-              'GEOGRAPHIC DEMAND & CONVERSION RATE',
+            Text(l10n.t('ins_countries'),
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 1.1),
             ),
             const SizedBox(height: 8),
@@ -79,13 +81,11 @@ class _InsightsScreenState extends State<InsightsScreen> {
             const SizedBox(height: 24),
 
             // Skill Gap Analyzer
-            const Text(
-              'SKILL GAP ANALYZER',
+            Text(l10n.t('ins_skill_gaps'),
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 1.1),
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Top recurring requirements found in eligible job postings that are missing from your uploaded CVs.',
+            Text(l10n.t('ins_skill_gaps'),
               style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
             ),
             const SizedBox(height: 8),
@@ -93,8 +93,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
             const SizedBox(height: 24),
 
             // Source performance
-            const Text(
-              'SOURCES PERFORMANCE',
+            Text(l10n.t('ins_sources'),
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 1.1),
             ),
             const SizedBox(height: 8),
@@ -114,8 +113,8 @@ class _InsightsScreenState extends State<InsightsScreen> {
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: AppTheme.border),
         ),
-        child: const Center(
-          child: Text('No country telemetry recorded yet.', style: TextStyle(color: AppTheme.textMuted, fontSize: 12)),
+        child: Center(
+          child: Text(l10n.t('mem_empty'), style: TextStyle(color: AppTheme.textMuted, fontSize: 12)),
         ),
       );
     }

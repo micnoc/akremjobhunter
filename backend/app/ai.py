@@ -163,8 +163,18 @@ def _generate(prompt: str, system: str, schema: type[T] | None = None, temperatu
     raise RuntimeError(f"AI generation failed: {last_exc}")
 
 
-def ping() -> str:
-    return _generate("Reply with the single word OK.", "You are a health check.")  # type: ignore[return-value]
+def ping() -> dict[str, Any]:
+    key = store.get("ai_api_key")
+    if key:
+        try:
+            model = resolve_model()
+            _client()
+            return {"ok": True, "provider": "gemini", "model": model, "status": "ONLINE"}
+        except Exception as exc:
+            log.warning("Gemini ping failed (%s), falling back to LocalIntelligentEngine", exc)
+    from .local_ai import LocalIntelligentEngine
+    res = LocalIntelligentEngine.ping()
+    return {"ok": True, **res}
 
 
 # ---------------------------------------------------------------- tasks
@@ -235,12 +245,18 @@ def write_cover_letter(job: dict, cv_text: str, language: str, signature: str) -
 
 
 def write_follow_up(job: dict, language: str, signature: str) -> str:
-    prompt = (
-        f"Language: {language}\nWrite a 3-4 sentence polite follow-up on my application for '{job['title']}' "
-        f"at {job['company']}, sent about a week ago. Reaffirm interest, ask about next steps. "
-        f"Plain text body only, end with:\n{signature}"
-    )
-    return _generate(prompt, _WRITER_SYSTEM, temperature=0.4)  # type: ignore[return-value]
+    if store.get("ai_api_key"):
+        try:
+            prompt = (
+                f"Language: {language}\nWrite a 3-4 sentence polite follow-up on my application for '{job['title']}' "
+                f"at {job['company']}, sent about a week ago. Reaffirm interest, ask about next steps. "
+                f"Plain text body only, end with:\n{signature}"
+            )
+            return _generate(prompt, _WRITER_SYSTEM, temperature=0.4)  # type: ignore[return-value]
+        except Exception as exc:
+            log.warning("Remote write_follow_up failed (%s), fallback to LocalIntelligentEngine", exc)
+    from .local_ai import LocalIntelligentEngine
+    return LocalIntelligentEngine.write_follow_up(job, language, signature)
 
 
 _TRIAGE_SYSTEM = """You classify emails received in reply to job applications.
@@ -288,21 +304,33 @@ Produce exactly 10 likely questions with suggested answers, in the language of t
 
 
 def interview_prep(job: dict, email_text: str, cv_text: str, company_brief: str) -> InterviewPrep:
-    prompt = (
-        f"Position: {job['title']} at {job['company']} ({job['country']})\nPosting:\n{job['description'][:6000]}\n\n"
-        f"Company briefing (from web research):\n{company_brief or 'not available'}\n\n"
-        f"Invitation email:\n{email_text[:5000]}\n\nCV TEXT:\n{cv_text[:12000]}"
-    )
-    return _generate(prompt, _PREP_SYSTEM, InterviewPrep, temperature=0.3)  # type: ignore[return-value]
+    if store.get("ai_api_key"):
+        try:
+            prompt = (
+                f"Position: {job['title']} at {job['company']} ({job['country']})\nPosting:\n{job['description'][:6000]}\n\n"
+                f"Company briefing (from web research):\n{company_brief or 'not available'}\n\n"
+                f"Invitation email:\n{email_text[:5000]}\n\nCV TEXT:\n{cv_text[:12000]}"
+            )
+            return _generate(prompt, _PREP_SYSTEM, InterviewPrep, temperature=0.3)  # type: ignore[return-value]
+        except Exception as exc:
+            log.warning("Remote interview_prep failed (%s), fallback to LocalIntelligentEngine", exc)
+    from .local_ai import LocalIntelligentEngine
+    return LocalIntelligentEngine.interview_prep(job, email_text, cv_text, company_brief)
 
 
 def extract_cv_profile(cv_text: str) -> CvProfile:
-    return _generate(
-        f"CV TEXT:\n{cv_text[:15000]}",
-        "Extract a structured profile from this CV. Use only what is written. Do not infer missing data; "
-        "use empty strings when absent.",
-        CvProfile,
-    )  # type: ignore[return-value]
+    if store.get("ai_api_key"):
+        try:
+            return _generate(
+                f"CV TEXT:\n{cv_text[:15000]}",
+                "Extract a structured profile from this CV. Use only what is written. Do not infer missing data; "
+                "use empty strings when absent.",
+                CvProfile,
+            )  # type: ignore[return-value]
+        except Exception as exc:
+            log.warning("Remote extract_cv_profile failed (%s), fallback to LocalIntelligentEngine", exc)
+    from .local_ai import LocalIntelligentEngine
+    return LocalIntelligentEngine.extract_cv_profile(cv_text)
 
 
 def dumps(obj: BaseModel) -> str:

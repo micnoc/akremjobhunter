@@ -333,9 +333,8 @@ def test_integration(target: str) -> dict:
             mailer.test_connection()
             return {"ok": True, "message": "IMAP and SMTP authentication succeeded"}
         if target == "ai":
-            model = ai.resolve_model()
-            ai.ping()
-            return {"ok": True, "message": f"Model {model} responded"}
+            info = ai.ping()
+            return {"ok": True, "message": f"{info.get('model', 'AI Engine')} is ONLINE (Ready to evaluate & write)", "details": info}
         if target == "telegram":
             return {"ok": True, "message": notifier.test_telegram()}
         if target == "whatsapp":

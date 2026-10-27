@@ -537,14 +537,19 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                       Row(
                         children: [
                           Container(
-                            width: 38,
-                            height: 38,
+                            width: 42,
+                            height: 42,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: AppTheme.surface,
-                              border: Border.all(color: AppTheme.primary),
+                              border: Border.all(color: AppTheme.primary, width: 1.5),
                             ),
-                            child: const Icon(Icons.radar_rounded, color: AppTheme.primary, size: 20),
+                            child: ClipOval(
+                              child: Image.asset(
+                                'assets/branding/app_badge.jpg',
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) => const Icon(Icons.radar_rounded, color: AppTheme.primary, size: 20),
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 12),
                           GestureDetector(
