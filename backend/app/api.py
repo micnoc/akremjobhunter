@@ -17,6 +17,9 @@ from .config import get_settings
 from .db import get_db
 from .models import Application, AppStatus, Cv, EmailEvent, EngineRun, Job, JobStatus, utcnow
 from .probability_engine import OfferProbabilityEngine
+from .scam_detector import ScamDetectorEngine
+from .employer_intelligence import EmployerIntelligenceSystem
+from .agent_system import AgentCoordinator
 from .security import require_access
 from .sources import adzuna
 
@@ -52,6 +55,21 @@ def _app_summary(a: Application) -> dict:
         has_direct_email=bool(j.apply_email or j.recruiter_email),
         missing_skills_count=missing_cnt,
     )
+    scam_res = ScamDetectorEngine.analyze_opportunity(
+        title=j.title,
+        company=j.company,
+        description=j.description or "",
+        apply_email=j.apply_email,
+        recruiter_email=j.recruiter_email,
+        job_url=j.url,
+    )
+    emp_res = EmployerIntelligenceSystem.rate_employer(
+        company_name=j.company,
+        country=j.country,
+        source=j.source,
+        job_description=j.description or "",
+        eligibility=j.eligibility,
+    )
     return {
         "id": a.id, "status": a.status, "method": a.method, "title": j.title, "company": j.company,
         "country": j.country, "location": j.location, "score": j.match_score, "eligibility": j.eligibility,
@@ -59,6 +77,9 @@ def _app_summary(a: Application) -> dict:
         "url": j.url, "source": j.source, "last_response_at": _iso(a.last_response_at),
         "response_summary": a.response_summary,
         "probability": prob,
+        "ats_score": j.match_score or 75,
+        "scam_defense": scam_res,
+        "employer_intel": emp_res,
     }
 
 
@@ -386,3 +407,26 @@ def runs(limit: int = 40, db: Session = Depends(get_db)) -> dict:
         {"kind": r.kind, "started_at": _iso(r.started_at), "finished_at": _iso(r.finished_at), "ok": r.ok, "detail": r.detail}
         for r in items
     ]}
+
+
+# ---------------------------------------------------------------- multi-agent network
+@router.get("/agents/status")
+def get_agents_status() -> dict:
+    return AgentCoordinator.get_agent_status()
+
+
+class ScamCheckIn(BaseModel):
+    title: str = ""
+    company: str = ""
+    text: str = ""
+    email: str | None = None
+
+
+@router.post("/scam-check")
+def check_scam(body: ScamCheckIn) -> dict:
+    return ScamDetectorEngine.analyze_opportunity(
+        title=body.title,
+        company=body.company,
+        description=body.text,
+        apply_email=body.email,
+    )

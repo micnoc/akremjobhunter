@@ -101,6 +101,9 @@ class ApplicationItem {
   final List<dynamic>? missingSkills;
   final List<dynamic>? events;
   final Map<String, dynamic>? probability;
+  final int? atsScore;
+  final Map<String, dynamic>? scamDefense;
+  final Map<String, dynamic>? employerIntel;
 
   ApplicationItem({
     required this.id,
@@ -126,7 +129,15 @@ class ApplicationItem {
     this.missingSkills,
     this.events,
     this.probability,
+    this.atsScore,
+    this.scamDefense,
+    this.employerIntel,
   });
+
+  String get scamRiskLevel => (scamDefense?['risk_level'] as String?)?.toUpperCase() ?? 'LOW';
+  int get employerScore => (employerIntel?['employer_score'] as num?)?.toInt() ?? 82;
+  String get employerCategory => employerIntel?['category'] as String? ?? 'Good';
+  String get sponsorshipFriendliness => employerIntel?['sponsorship_friendliness'] as String? ?? 'High';
 
   factory ApplicationItem.fromJson(Map<String, dynamic> json) {
     final job = json['job'] as Map<String, dynamic>? ?? {};
@@ -154,6 +165,9 @@ class ApplicationItem {
       missingSkills: job['missing_skills'],
       events: json['events'],
       probability: json['probability'] as Map<String, dynamic>?,
+      atsScore: (json['ats_score'] as num?)?.toInt(),
+      scamDefense: json['scam_defense'] as Map<String, dynamic>?,
+      employerIntel: json['employer_intel'] as Map<String, dynamic>?,
     );
   }
 }

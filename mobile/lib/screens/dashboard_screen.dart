@@ -153,6 +153,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 14),
             ],
 
+            // Autonomous Multi-Agent Network (6 Active Agents)
+            _buildMultiAgentCard(),
+            const SizedBox(height: 16),
+
             // System Integrations Status Chips
             _buildIntegrationsCard(d.config),
             const SizedBox(height: 16),
@@ -455,4 +459,143 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }).toList(),
     );
   }
+  Widget _buildMultiAgentCard() {
+    final agents = [
+      {'name': 'Job Agent', 'role': 'Canada, EURES, Indeed & Jooble', 'icon': Icons.radar_rounded, 'color': const Color(0xFF3B82F6)},
+      {'name': 'CV Agent', 'role': 'Auto-Select CV & ATS Optimizer', 'icon': Icons.description_rounded, 'color': const Color(0xFF10B981)},
+      {'name': 'Cover Letter Agent', 'role': 'FR/EN/AR Tailored Letters', 'icon': Icons.history_edu_rounded, 'color': const Color(0xFF8B5CF6)},
+      {'name': 'Immigration Agent', 'role': 'LMIA & Visa Compatibility', 'icon': Icons.card_membership_rounded, 'color': const Color(0xFFF59E0B)},
+      {'name': 'Email Agent', 'role': '24/7 IMAP, Scam & Offer Triage', 'icon': Icons.mail_lock_rounded, 'color': const Color(0xFFEC4899)},
+      {'name': 'Opportunity Agent', 'role': 'Scam Defense & Score Prioritizer', 'icon': Icons.verified_user_rounded, 'color': const Color(0xFF06B6D4)},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.hub_rounded, color: AppTheme.primary, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'AUTONOMOUS MULTI-AGENT NETWORK',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.1,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                    Text(
+                      '6 Coordinated AI Agents Active 24/7',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF10B981)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.fiber_manual_record, color: Color(0xFF10B981), size: 10),
+                    SizedBox(width: 4),
+                    Text(
+                      'LIVE',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Divider(color: AppTheme.border, height: 1),
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 2.6,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+            ),
+            itemCount: agents.length,
+            itemBuilder: (context, i) {
+              final a = agents[i];
+              final c = a['color'] as Color;
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppTheme.surface.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.border.withValues(alpha: 0.6)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(a['icon'] as IconData, size: 20, color: c),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            a['name'] as String,
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            a['role'] as String,
+                            style: const TextStyle(fontSize: 9.5, color: AppTheme.textMuted),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
 }

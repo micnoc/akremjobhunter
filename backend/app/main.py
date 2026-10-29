@@ -45,9 +45,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="akremjobhunter Cloud Engine",
-    version="3.0.0",
-    description="24/7 Autonomous AI Job Hunter with strict grounding and zero spam.",
+    title="VisaJob AI Cloud Engine",
+    version="3.1.0",
+    description="VisaJob AI — Your Global AI Employment & Immigration Agent by Akrem Hidouri",
     lifespan=lifespan,
 )
 
@@ -68,7 +68,9 @@ app.include_router(admin_router)
 def health():
     return {
         "status": "ONLINE",
-        "engine": "akremjobhunter",
-        "version": "3.0.0",
+        "app_name": "VisaJob AI",
+        "author": "Akrem Hidouri",
+        "engine": "visajob_ai_multi_agent",
+        "version": "3.1.0",
         "timezone": get_settings().timezone,
     }

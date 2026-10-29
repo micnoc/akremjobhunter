@@ -16,11 +16,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await LanguageController.instance.init();
   await ApiService.loadCredentials();
-  runApp(const AkremJobHunterApp());
+  runApp(const VisaJobApp());
 }
 
-class AkremJobHunterApp extends StatelessWidget {
-  const AkremJobHunterApp({super.key});
+class VisaJobApp extends StatelessWidget {
+  const VisaJobApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +30,7 @@ class AkremJobHunterApp extends StatelessWidget {
         final currentLocale = LanguageController.instance.currentLocale;
 
         return MaterialApp(
-          title: 'akremjobhunter',
+          title: 'VisaJob AI',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.darkTheme,
           locale: currentLocale,
@@ -128,3 +128,6 @@ class _MainShellState extends State<MainShell> {
     );
   }
 }
+
+
+typedef AkremJobHunterApp = VisaJobApp;

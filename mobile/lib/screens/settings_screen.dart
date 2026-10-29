@@ -766,7 +766,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
             child: const Center(
               child: Text(
-                'akremjobhunter Cloud v3.0.0 (Tap 5x for Developer Mode)',
+                'VisaJob AI Cloud v3.1 Ultra • by Akrem Hidouri (Tap 5x for Developer Mode)',
                 style: TextStyle(color: Colors.white24, fontSize: 11),
               ),
             ),

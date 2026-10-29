@@ -4,7 +4,6 @@ import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import 'auth_screen.dart';
 import '../main.dart';
-import '../l10n/app_localizations.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -144,33 +143,46 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
                       // Application Title
                       const Text(
-                        'akremjobhunter',
+                        'VisaJob AI',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: AppTheme.textPrimary,
-                          fontSize: 30,
+                          fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          letterSpacing: 1.8,
+                          letterSpacing: 2.0,
                         ),
                       ),
                       const SizedBox(height: 10),
 
-                      // Tagline
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppTheme.surface.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppTheme.border),
+                      // Subtitle
+                      Text(
+                        'Your Global AI Employment & Immigration Agent',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppTheme.primary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.1,
                         ),
-                        child: Text(
-                          AppLocalizations.of(context).t('app_tagline'),
+                      ),
+                      const SizedBox(height: 6),
+
+                      // Author Attribution
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppTheme.surface.withValues(alpha: 0.7),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3)),
+                        ),
+                        child: const Text(
+                          'by Akrem Hidouri',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: AppTheme.primary,
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 1.2,
+                            color: AppTheme.textMuted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.8,
                           ),
                         ),
                       ),

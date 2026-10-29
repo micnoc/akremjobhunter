@@ -561,7 +561,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                               }
                             },
                             child: const Text(
-                              'akremjobhunter',
+                              'VisaJob AI',
                               style: TextStyle(
                                 fontSize: 19,
                                 fontWeight: FontWeight.bold,

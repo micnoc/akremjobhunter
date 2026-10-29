@@ -351,6 +351,34 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                           ),
                         ),
                       ],
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: (item.scamRiskLevel == 'HIGH' ? const Color(0xFFEF4444) : const Color(0xFF10B981)).withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          item.scamRiskLevel == 'HIGH' ? '🚨 Scam' : '🛡️ Safe',
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.bold,
+                            color: item.scamRiskLevel == 'HIGH' ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF3B82F6).withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '⭐ ${item.employerScore}/100',
+                          style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF3B82F6)),
+                        ),
+                      ),
                     ],
                   ),
                   Text(

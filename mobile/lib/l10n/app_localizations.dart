@@ -71,8 +71,18 @@ class AppLocalizations {
   static const Map<String, Map<String, String>> _translations = {
     // ================================================================= English
     'en': {
-      'app_name': 'akremjobhunter',
-      'app_tagline': 'AUTONOMOUS 24/7 AI RECRUITMENT AGENT',
+      'app_name': 'VisaJob AI',
+      'app_tagline': 'Your Global AI Employment & Immigration Agent\nby Akrem Hidouri',
+      'scam_risk': 'Scam Risk',
+      'scam_risk_low': 'Low Risk (Verified)',
+      'scam_risk_med': 'Medium Risk (Caution)',
+      'scam_risk_high': 'High Risk (Scam Warning)',
+      'employer_score': 'Employer Score',
+      'employer_intel': 'Employer Intelligence',
+      'ats_score': 'ATS Match Score',
+      'multi_agent_status': 'Autonomous Multi-Agent Network (6 Active Agents)',
+      'author_signature': 'Developed by Akrem Hidouri',
+      'author_name': 'Akrem Hidouri',
 
       // Navigation
       'nav_dashboard': 'Dashboard',
@@ -199,8 +209,8 @@ class AppLocalizations {
       'set_saved': 'Settings saved on Cloud Server',
 
       // About
-      'about_title': 'About akremjobhunter',
-      'about_version': 'Version 2.0.0 (Cloud SaaS)',
+      'about_title': 'About VisaJob AI',
+      'about_version': 'Version 3.1.0 Ultra (Cloud SaaS)',
       'about_mission_title': 'Autonomous 24/7 Recruitment Agent',
       'about_mission_body': 'akremjobhunter operates continuously in the cloud even when your mobile phone or PC is powered off. It screens international opportunities, filters visa sponsorship, and drafts tailored applications.',
       'about_grounding_title': 'Strict CV Grounding Guarantee',
@@ -211,8 +221,18 @@ class AppLocalizations {
 
     // ================================================================= French
     'fr': {
-      'app_name': 'akremjobhunter',
-      'app_tagline': 'AGENT DE RECRUTEMENT IA AUTONOME 24/7',
+      'app_name': 'VisaJob AI',
+      'app_tagline': 'Votre Agent IA Mondial pour l\'Emploi et l\'Immigration\npar Akrem Hidouri',
+      'scam_risk': 'Risque d\'escroquerie',
+      'scam_risk_low': 'Risque faible (Vérifié)',
+      'scam_risk_med': 'Risque moyen (Prudence)',
+      'scam_risk_high': 'Risque élevé (Alerte Arnaque)',
+      'employer_score': 'Score Employeur',
+      'employer_intel': 'Intelligence Employeur',
+      'ats_score': 'Score ATS',
+      'multi_agent_status': 'Réseau Multi-Agents Autonome (6 Agents Actifs)',
+      'author_signature': 'Développé par Akrem Hidouri',
+      'author_name': 'Akrem Hidouri',
 
       // Navigation
       'nav_dashboard': 'Tableau de bord',
@@ -339,8 +359,8 @@ class AppLocalizations {
       'set_saved': 'Paramètres enregistrés sur le serveur Cloud',
 
       // About
-      'about_title': 'À propos d\'akremjobhunter',
-      'about_version': 'Version 2.0.0 (Cloud SaaS)',
+      'about_title': 'À propos de VisaJob AI',
+      'about_version': 'Version 3.1.0 Ultra (Cloud SaaS)',
       'about_mission_title': 'Agent de recrutement autonome 24/7',
       'about_mission_body': 'akremjobhunter fonctionne en continu dans le cloud, même lorsque votre téléphone ou PC est éteint. Il détecte les opportunités internationales, filtre les visas et rédige des candidatures personnalisées.',
       'about_grounding_title': 'Garantie stricte de fidélité au CV',
@@ -351,8 +371,18 @@ class AppLocalizations {
 
     // ================================================================= Arabic (RTL)
     'ar': {
-      'app_name': 'akremjobhunter',
-      'app_tagline': 'وكيل التوظيف الذكي المستقل 24/7',
+      'app_name': 'VisaJob AI',
+      'app_tagline': 'وكيل التوظيف والهجرة الذكي العالمي\nتطوير: أكرم الحيدوري (Akrem Hidouri)',
+      'scam_risk': 'مؤشر أمان العرض',
+      'scam_risk_low': 'آمن وموثوق (Low Risk)',
+      'scam_risk_med': 'متوسط الحذر (Medium Risk)',
+      'scam_risk_high': 'تحذير احتيال (High Scam Risk)',
+      'employer_score': 'تقييم المشغّل',
+      'employer_intel': 'بيانات سمعة المشغّل',
+      'ats_score': 'تطابق السيرة الذاتية ATS',
+      'multi_agent_status': 'شبكة الوكلاء الأذكياء المستقلة (6 وكلاء نشطون 24/7)',
+      'author_signature': 'تطوير المهندس أكرم الحيدوري',
+      'author_name': 'أكرم الحيدوري (Akrem Hidouri)',
 
       // Navigation
       'nav_dashboard': 'الرئيسية',
@@ -479,8 +509,8 @@ class AppLocalizations {
       'set_saved': 'تم حفظ الإعدادات على السيرفر السحابي',
 
       // About
-      'about_title': 'عن akremjobhunter',
-      'about_version': 'الإصدار 2.0.0 (المنصة السحابية)',
+      'about_title': 'عن VisaJob AI',
+      'about_version': 'الإصدار 3.1.0 الترا (المنصة السحابية)',
       'about_mission_title': 'وكيل توظيف آلي يعمل 24/7',
       'about_mission_body': 'يعمل akremjobhunter بشكل متواصل على الخادم السحابي حتى لو كان هاتفك أو حاسوبك مغلقاً تماماً. يفرز فرص العمل الدولية، يتحقق من كفالة التأشيرات ورعاية تصاريح العمل، ويرسل الطلبات باحترافية.',
       'about_grounding_title': 'ضمان المصداقية التامة وعدم التزييف',

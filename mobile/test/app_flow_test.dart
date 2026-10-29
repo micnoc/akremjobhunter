@@ -26,7 +26,7 @@ void main() {
 
     // 3. Verify AuthScreen is displayed
     expect(find.byType(AuthScreen), findsOneWidget);
-    expect(find.text('akremjobhunter'), findsAtLeastNWidgets(1));
+    expect(find.text('VisaJob AI'), findsAtLeastNWidgets(1));
 
     // 4. Test Language Switching to Arabic (RTL)
     await LanguageController.instance.setLanguage('ar');
@@ -98,7 +98,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(AboutScreen), findsOneWidget);
-    expect(find.text('akremjobhunter'), findsOneWidget);
+    expect(find.text('VisaJob AI'), findsOneWidget);
     expect(find.byIcon(Icons.auto_awesome_rounded), findsOneWidget);
     expect(find.byIcon(Icons.verified_user_outlined), findsOneWidget);
     expect(find.byIcon(Icons.lock_outline_rounded), findsOneWidget);

@@ -73,7 +73,7 @@ class AboutScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'akremjobhunter',
+                              'VisaJob AI',
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
@@ -119,7 +119,7 @@ class AboutScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   Center(
                     child: Text(
-                      'akremjobhunter • 2026',
+                      'VisaJob AI • by Akrem Hidouri • 2026',
                       style: TextStyle(fontSize: 11, color: AppTheme.textMuted.withValues(alpha: 0.6)),
                     ),
                   ),

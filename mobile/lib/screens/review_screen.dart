@@ -243,6 +243,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 if (item.source != null) _buildBadge(item.source!, Icons.public),
                 if (item.probability?['immigration_pathway'] != null)
                   _buildBadge('🛂 ${item.probability!['immigration_pathway']}', Icons.card_membership_outlined),
+                _buildScamBadge(item.scamRiskLevel),
+                _buildEmployerBadge(item.employerScore, item.employerCategory),
               ],
             ),
 
@@ -302,4 +304,62 @@ class _ReviewScreenState extends State<ReviewScreen> {
       ),
     );
   }
+  Widget _buildScamBadge(String level) {
+    Color color;
+    IconData icon;
+    String label;
+    switch (level.toUpperCase()) {
+      case 'HIGH':
+        color = const Color(0xFFEF4444);
+        icon = Icons.warning_amber_rounded;
+        label = '🚨 Scam Risk: HIGH';
+        break;
+      case 'MEDIUM':
+        color = const Color(0xFFF59E0B);
+        icon = Icons.info_outline;
+        label = '⚠️ Scam Risk: MED';
+        break;
+      default:
+        color = const Color(0xFF10B981);
+        icon = Icons.verified_user_outlined;
+        label = '🛡️ Scam: LOW (Verified)';
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(label, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: color)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmployerBadge(int score, String category) {
+    Color color = score >= 80 ? const Color(0xFF10B981) : (score >= 60 ? const Color(0xFF3B82F6) : const Color(0xFFF59E0B));
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.business_rounded, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text('⭐ $score/100 ($category)', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: color)),
+        ],
+      ),
+    );
+  }
+
 }
