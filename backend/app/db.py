@@ -91,6 +91,10 @@ def init_db() -> None:
                 cvs_cols = {c["name"] for c in insp.get_columns("cvs")}
                 if "user_id" not in cvs_cols:
                     conn.execute(text("ALTER TABLE cvs ADD COLUMN user_id INTEGER"))
+            if "applications" in tables:
+                app_cols = {c["name"] for c in insp.get_columns("applications")}
+                if "user_id" not in app_cols:
+                    conn.execute(text("ALTER TABLE applications ADD COLUMN user_id INTEGER"))
     except Exception as exc:
         import logging
         logging.getLogger("db").warning(f"Lightweight schema check note: {exc}")

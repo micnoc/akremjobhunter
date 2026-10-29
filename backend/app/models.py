@@ -100,6 +100,7 @@ class Application(Base):
     __tablename__ = "applications"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id", ondelete="CASCADE"), unique=True)
     cv_id: Mapped[int | None] = mapped_column(ForeignKey("cvs.id", ondelete="SET NULL"), nullable=True)
     method: Mapped[str] = mapped_column(String(10))  # EMAIL | MANUAL
@@ -196,3 +197,36 @@ class UserSession(Base):
     ip_address: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     user: Mapped[User] = relationship()
+
+
+class UserSetting(Base):
+    __tablename__ = "user_settings"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    key: Mapped[str] = mapped_column(String(100), primary_key=True)
+    value: Mapped[str] = mapped_column(Text)
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    category: Mapped[str] = mapped_column(String(50))  # INTERVIEW, OFFER, CONTRACT, SCAM_ALERT, EMPLOYER_ALERT, SYSTEM
+    title: Mapped[str] = mapped_column(String(250))
+    message: Mapped[str] = mapped_column(Text)
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False)
+    action_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
+class AiChatMessage(Base):
+    __tablename__ = "ai_chat_messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    role: Mapped[str] = mapped_column(String(20))  # user, assistant, system
+    content: Mapped[str] = mapped_column(Text)
+    document_name: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

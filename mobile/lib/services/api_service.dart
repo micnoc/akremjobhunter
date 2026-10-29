@@ -611,4 +611,116 @@ class ApiService {
     }
     throw Exception('Failed to update profile');
   }
+
+  // ================================================================= V3.2 Real Job Discovery & Sources
+  static Future<Map<String, dynamic>> scanLiveJobs({List<String>? keywords, List<String>? countries}) async {
+    final res = await http.post(
+      Uri.parse('$serverUrl/api/v1/jobs/scan-live'),
+      headers: _headers,
+      body: jsonEncode({
+        'keywords': keywords ?? ['Software Engineer', 'Technician', 'Mechanic'],
+        'countries': countries ?? ['CA', 'DE', 'FR', 'GB'],
+      }),
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(utf8.decode(res.bodyBytes));
+    }
+    throw Exception('Live job scan failed');
+  }
+
+  static Future<List<dynamic>> getSourcesStatus() async {
+    final res = await http.get(Uri.parse('$serverUrl/api/v1/sources/status'), headers: _headers);
+    if (res.statusCode == 200) {
+      final data = jsonDecode(utf8.decode(res.bodyBytes));
+      return data['sources'] ?? [];
+    }
+    return [];
+  }
+
+  static Future<Map<String, dynamic>> getAgentsActivity() async {
+    final res = await http.get(Uri.parse('$serverUrl/api/v1/agents/activity'), headers: _headers);
+    if (res.statusCode == 200) {
+      return jsonDecode(utf8.decode(res.bodyBytes));
+    }
+    return {};
+  }
+
+  // ================================================================= V3.2 Real AI Assistant & Document Analysis
+  static Future<String> sendChatMessage(String prompt, {String? docType, String? docText}) async {
+    final res = await http.post(
+      Uri.parse('$serverUrl/api/v1/ai/chat'),
+      headers: _headers,
+      body: jsonEncode({
+        'prompt': prompt,
+        'doc_type': docType,
+        'document_text': docText,
+      }),
+    );
+    if (res.statusCode == 200) {
+      final data = jsonDecode(utf8.decode(res.bodyBytes));
+      return data['reply'] ?? 'Response received.';
+    }
+    throw Exception('AI Chat failed: HTTP ${res.statusCode}');
+  }
+
+  static Future<List<dynamic>> getChatMessages() async {
+    final res = await http.get(Uri.parse('$serverUrl/api/v1/ai/messages'), headers: _headers);
+    if (res.statusCode == 200) {
+      final data = jsonDecode(utf8.decode(res.bodyBytes));
+      return data['messages'] ?? [];
+    }
+    return [];
+  }
+
+  static Future<Map<String, dynamic>> analyzeDocument(String filePath, String fileName, String docType) async {
+    final req = http.MultipartRequest('POST', Uri.parse('$serverUrl/api/v1/ai/analyze-document'));
+    req.headers.addAll(_headers);
+    req.fields['doc_type'] = docType;
+    req.files.add(await http.MultipartFile.fromPath('file', filePath, filename: fileName));
+    final streamed = await req.send();
+    final res = await http.Response.fromStream(streamed);
+    if (res.statusCode == 200) {
+      return jsonDecode(utf8.decode(res.bodyBytes));
+    }
+    throw Exception('Document analysis failed: ${res.body}');
+  }
+
+  // ================================================================= V3.2 Telegram & WhatsApp
+  static Future<Map<String, dynamic>> getTelegramConnectUrl() async {
+    final res = await http.get(Uri.parse('$serverUrl/api/v1/telegram/connect-url'), headers: _headers);
+    if (res.statusCode == 200) {
+      return jsonDecode(utf8.decode(res.bodyBytes));
+    }
+    return {'ok': false, 'error': 'Could not get Telegram URL'};
+  }
+
+  static Future<Map<String, dynamic>> getTelegramDiagnostics() async {
+    final res = await http.get(Uri.parse('$serverUrl/api/v1/telegram/diagnostics'), headers: _headers);
+    if (res.statusCode == 200) {
+      return jsonDecode(utf8.decode(res.bodyBytes));
+    }
+    return {'configured': false, 'status': 'OFFLINE'};
+  }
+
+  static Future<Map<String, dynamic>> testWhatsApp() async {
+    final res = await http.post(Uri.parse('$serverUrl/api/v1/whatsapp/test'), headers: _headers);
+    if (res.statusCode == 200) {
+      return jsonDecode(utf8.decode(res.bodyBytes));
+    }
+    return {'ok': false, 'message': 'WhatsApp request failed'};
+  }
+
+  // ================================================================= V3.2 Notifications
+  static Future<List<dynamic>> getNotifications() async {
+    final res = await http.get(Uri.parse('$serverUrl/api/v1/notifications'), headers: _headers);
+    if (res.statusCode == 200) {
+      final data = jsonDecode(utf8.decode(res.bodyBytes));
+      return data['notifications'] ?? [];
+    }
+    return [];
+  }
+
+  static Future<void> markNotificationRead(int id) async {
+    await http.post(Uri.parse('$serverUrl/api/v1/notifications/$id/read'), headers: _headers);
+  }
 }

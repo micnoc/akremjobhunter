@@ -29,7 +29,7 @@ def extract_text(path: str) -> str:
     return re.sub(r"[ \t]+", " ", text).strip()
 
 
-def store_cv(db: Session, original_name: str, content: bytes) -> Cv:
+def store_cv(db: Session, original_name: str, content: bytes, user_id: int | None = None) -> Cv:
     if not content.startswith(b"%PDF"):
         raise CvError(f"{original_name}: not a PDF file")
     if len(content) > MAX_BYTES:
@@ -43,7 +43,7 @@ def store_cv(db: Session, original_name: str, content: bytes) -> Cv:
         os.remove(path)
         raise CvError(f"{original_name}: no readable text (scanned image PDF). Export the CV as a text PDF.")
 
-    cv = Cv(label=os.path.splitext(original_name)[0][:200], original_name=original_name, stored_name=stored, text=text)
+    cv = Cv(user_id=user_id, label=os.path.splitext(original_name)[0][:200], original_name=original_name, stored_name=stored, text=text)
     try:
         prof = ai.extract_cv_profile(text)
         cv.language = (prof.language or "en")[:5].lower()
@@ -87,8 +87,11 @@ def delete_cv(db: Session, cv: Cv) -> None:
     db.delete(cv)
 
 
-def active_cvs(db: Session) -> list[Cv]:
-    return list(db.scalars(select(Cv).where(Cv.active.is_(True))))
+def active_cvs(db: Session, user_id: int | None = None) -> list[Cv]:
+    stmt = select(Cv).where(Cv.active.is_(True))
+    if user_id is not None:
+        stmt = stmt.where(Cv.user_id == user_id)
+    return list(db.scalars(stmt))
 
 
 def to_dict(cv: Cv) -> dict:

@@ -1,3 +1,4 @@
+import 'screens/ai_assistant_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
@@ -68,6 +69,7 @@ class _MainShellState extends State<MainShell> {
       const ReviewScreen(),
       const ApplicationsScreen(),
       const CvVaultScreen(),
+      const AiAssistantScreen(),
       const InsightsScreen(),
       SettingsScreen(
         onDisconnect: widget.onDisconnect ??
@@ -112,6 +114,11 @@ class _MainShellState extends State<MainShell> {
             icon: const Icon(Icons.folder_copy_outlined),
             activeIcon: const Icon(Icons.folder_copy_rounded),
             label: l10n.t('nav_cv_vault'),
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.smart_toy_outlined),
+            activeIcon: const Icon(Icons.smart_toy_rounded),
+            label: l10n.t('nav_ai_assistant'),
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.bar_chart_rounded),

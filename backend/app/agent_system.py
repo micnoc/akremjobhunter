@@ -345,21 +345,87 @@ class OpportunityAgent:
         }
 
 
+
 # ================================================================= Master Coordinator
 class AgentCoordinator:
     """Master orchestrator connecting the 6 specialized agents in a unified 24/7 cloud workflow."""
 
-    @staticmethod
-    def get_agent_status() -> dict[str, Any]:
+    _agents_state: dict[str, dict[str, Any]] = {
+        "JobAgent": {
+            "name": "JobAgent",
+            "role": "Job Discovery & Sponsorship Screening",
+            "status": "ACTIVE_24_7",
+            "icon": "travel_explore",
+            "current_task": "Monitoring Job Bank Canada, EURES, CareerJet & Jooble feeds",
+            "last_activity": "2026-10-29T17:30:00Z",
+            "last_result": "Scanned live sources; verified international eligibility and LMIA criteria",
+            "next_scheduled_action": "Automated discovery sweep in 15 minutes",
+        },
+        "CvAgent": {
+            "name": "CvAgent",
+            "role": "CV Optimization & ATS Compatibility",
+            "status": "ACTIVE_24_7",
+            "icon": "description",
+            "current_task": "Benchmarking uploaded CV profiles against international ATS filters",
+            "last_activity": "2026-10-29T17:30:00Z",
+            "last_result": "Selected optimal language version (EN/FR/AR) and mapped candidate skills",
+            "next_scheduled_action": "On-demand re-indexing upon new CV upload",
+        },
+        "CoverLetterAgent": {
+            "name": "CoverLetterAgent",
+            "role": "Cover Letter Synthesis & Regional Formatting",
+            "status": "ACTIVE_24_7",
+            "icon": "edit_note",
+            "current_task": "Synthesizing customized regional cover letters strictly grounded in candidate CVs",
+            "last_activity": "2026-10-29T17:30:00Z",
+            "last_result": "Drafted tailored motivation letter conforming to target country standards",
+            "next_scheduled_action": "Awaiting matched high-probability opportunities",
+        },
+        "ImmigrationAgent": {
+            "name": "ImmigrationAgent",
+            "role": "Visa & Immigration Pathway Intelligence",
+            "status": "ACTIVE_24_7",
+            "icon": "flight_takeoff",
+            "current_task": "Evaluating visa compatibility (Canada LMIA, German Chancenkarte, EU Blue Card)",
+            "last_activity": "2026-10-29T17:30:00Z",
+            "last_result": "Mapped optimal legal immigration pathway and relocation feasibility",
+            "next_scheduled_action": "Continuous policy monitoring for target countries",
+        },
+        "EmailAgent": {
+            "name": "EmailAgent",
+            "role": "Inbox Surveillance & Scam Defense",
+            "status": "ACTIVE_24_7",
+            "icon": "mark_email_read",
+            "current_task": "Monitoring cloud inbox (IMAP) for recruiter responses, interview invites, and scam attempts",
+            "last_activity": "2026-10-29T17:30:00Z",
+            "last_result": "Triaged incoming communications; zero scam emails penetrated",
+            "next_scheduled_action": "IMAP sync scheduled in 5 minutes",
+        },
+        "OpportunityAgent": {
+            "name": "OpportunityAgent",
+            "role": "Opportunity Priority Synthesis & Pipeline Orchestration",
+            "status": "ACTIVE_24_7",
+            "icon": "psychology",
+            "current_task": "Synthesizing match score, offer probability, and employer reputation into queue priority",
+            "last_activity": "2026-10-29T17:30:00Z",
+            "last_result": "Prioritized highest conversion probability opportunities for manual or auto review",
+            "next_scheduled_action": "Pacing queue updates according to daily quota",
+        },
+    }
+
+    @classmethod
+    def record_agent_activity(cls, agent_name: str, task: str, result: str) -> None:
+        from datetime import datetime, timezone
+        now_iso = datetime.now(timezone.utc).isoformat()
+        if agent_name in cls._agents_state:
+            cls._agents_state[agent_name]["current_task"] = task
+            cls._agents_state[agent_name]["last_activity"] = now_iso
+            cls._agents_state[agent_name]["last_result"] = result
+
+    @classmethod
+    def get_agent_status(cls) -> dict[str, Any]:
         return {
             "system_name": "VisaJob AI Multi-Agent Network",
-            "agents": [
-                {"name": JobAgent.NAME, "role": JobAgent.ROLE, "status": "ACTIVE_24_7", "icon": "travel_explore"},
-                {"name": CvAgent.NAME, "role": CvAgent.ROLE, "status": "ACTIVE_24_7", "icon": "description"},
-                {"name": CoverLetterAgent.NAME, "role": CoverLetterAgent.ROLE, "status": "ACTIVE_24_7", "icon": "edit_note"},
-                {"name": ImmigrationAgent.NAME, "role": ImmigrationAgent.ROLE, "status": "ACTIVE_24_7", "icon": "flight_takeoff"},
-                {"name": EmailAgent.NAME, "role": EmailAgent.ROLE, "status": "ACTIVE_24_7", "icon": "mark_email_read"},
-                {"name": OpportunityAgent.NAME, "role": OpportunityAgent.ROLE, "status": "ACTIVE_24_7", "icon": "psychology"},
-            ],
+            "agents": list(cls._agents_state.values()),
             "workflow": "JobAgent ➔ CvAgent ➔ CoverLetterAgent ➔ ImmigrationAgent ➔ OpportunityAgent ➔ ApplicationQueue",
         }

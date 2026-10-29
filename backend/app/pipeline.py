@@ -23,7 +23,7 @@ from .models import (
     Application, AppStatus, Cv, Eligibility, EmailEvent, EngineRun, Job, JobStatus, utcnow,
 )
 from .notifier import esc
-from .sources import REGISTRY, RawJob
+from .sources import REGISTRY, RawJob, SourcesTracker
 from .sources.base import normalize
 
 log = logging.getLogger("pipeline")
@@ -144,11 +144,14 @@ def discover() -> str:
                 continue
             try:
                 raw = fn(keywords, countries)
+                stored = _store_jobs(raw)
+                SourcesTracker.record_scan(name, count=len(raw))
+                stats[name] = stored
             except Exception as exc:
                 log.warning("source %s crashed: %s", name, exc)
+                SourcesTracker.record_scan(name, count=0, error=str(exc))
                 stats[name] = f"error: {exc}"[:120]
                 continue
-            stats[name] = _store_jobs(raw)
         t["detail"] = json.dumps(stats)
         return t["detail"]
     return "failed"
@@ -685,3 +688,31 @@ def weekly_report() -> str:
         lines += [f"• {esc(g['skill'])} — {g['count']} offers ({', '.join(g['countries'])})" for g in gaps]
     notifier.send("\n".join(lines))
     return "sent"
+
+
+def run_live_search(keywords: list[str], countries: list[str], limit_per_source: int = 15) -> list[dict]:
+    """Executes an on-demand live search across real job boards and stores results immediately."""
+    results = []
+    for name, fn in REGISTRY.items():
+        if name not in (store.get("sources_enabled") or ["jobbank", "eures", "careerjet", "jooble", "company_careers"]):
+            continue
+        try:
+            raw_jobs = fn(keywords, countries, limit=limit_per_source) if "limit" in fn.__code__.co_varnames else fn(keywords, countries)
+            _store_jobs(raw_jobs)
+            SourcesTracker.record_scan(name, count=len(raw_jobs))
+            for r in raw_jobs:
+                results.append({
+                    "source": r.source,
+                    "title": r.title,
+                    "company": r.company,
+                    "country": r.country,
+                    "location": r.location,
+                    "url": r.url,
+                    "apply_email": r.apply_email,
+                    "international_hint": r.international_hint,
+                    "discovered_at": utcnow().isoformat(),
+                })
+        except Exception as exc:
+            log.warning("Live scan error on source %s: %s", name, exc)
+            SourcesTracker.record_scan(name, count=0, error=str(exc))
+    return results

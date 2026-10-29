@@ -272,18 +272,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _openTelegramLink() async {
-    const url = 'https://t.me/akremjobhunter_bot';
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (mounted) {
-        setState(() => _tgChatCtrl.text = 'connected');
-        _save();
+    try {
+      final info = await ApiService.getTelegramConnectUrl();
+      final url = info['url'] ?? 'https://t.me/visajob_bot';
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
-    } else {
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تعذر فتح تيليغرام مباشرة')),
+          SnackBar(content: Text('Telegram connect: $e')),
         );
       }
     }

@@ -6,7 +6,7 @@ from typing import Any
 
 from .config import get_settings
 from .db import session_scope
-from .models import SettingRow
+from .models import SettingRow, UserSetting
 from .security import decrypt, encrypt
 
 SECRET_KEYS = {
@@ -37,7 +37,7 @@ DEFAULTS: dict[str, Any] = {
     "callmebot_apikey": "",
     "target_countries": ["DE", "FR", "BE", "NL", "LU", "CH", "AT", "CA", "US"],
     "search_keywords": [],  # empty -> use target titles extracted from active CVs
-    "sources_enabled": ["jobbank", "arbeitnow", "adzuna", "jobspy"],
+    "sources_enabled": ["jobbank", "eures", "careerjet", "jooble", "company_careers", "arbeitnow"],
     "daily_limit": 20,
     "min_match_score": 70,
     "allow_unclear_eligibility": False,
@@ -64,8 +64,17 @@ DEFAULTS: dict[str, Any] = {
 INTERNAL_KEYS = {"imap_last_uid", "telegram_update_offset"}
 
 
-def get(key: str) -> Any:
+def get(key: str, user_id: int | None = None) -> Any:
     with session_scope() as s:
+        if user_id is not None:
+            user_row = s.get(UserSetting, (user_id, key))
+            if user_row is not None:
+                raw = decrypt(user_row.value) if key in SECRET_KEYS else user_row.value
+                try:
+                    return json.loads(raw)
+                except (json.JSONDecodeError, TypeError):
+                    return raw
+
         row = s.get(SettingRow, key)
         if row is None:
             return DEFAULTS.get(key)
@@ -76,7 +85,7 @@ def get(key: str) -> Any:
             return raw
 
 
-def set_many(values: dict[str, Any]) -> None:
+def set_many(values: dict[str, Any], user_id: int | None = None) -> None:
     with session_scope() as s:
         for key, val in values.items():
             if key not in DEFAULTS:
@@ -88,24 +97,32 @@ def set_many(values: dict[str, Any]) -> None:
             raw = json.dumps(val)
             if key in SECRET_KEYS:
                 raw = encrypt(raw)
-            row = s.get(SettingRow, key)
-            if row is None:
-                s.add(SettingRow(key=key, value=raw))
+
+            if user_id is not None:
+                user_row = s.get(UserSetting, (user_id, key))
+                if user_row is None:
+                    s.add(UserSetting(user_id=user_id, key=key, value=raw))
+                else:
+                    user_row.value = raw
             else:
-                row.value = raw
+                row = s.get(SettingRow, key)
+                if row is None:
+                    s.add(SettingRow(key=key, value=raw))
+                else:
+                    row.value = raw
 
 
-def put(key: str, value: Any) -> None:
-    set_many({key: value})
+def put(key: str, value: Any, user_id: int | None = None) -> None:
+    set_many({key: value}, user_id=user_id)
 
 
-def public_view() -> dict[str, Any]:
+def public_view(user_id: int | None = None) -> dict[str, Any]:
     """Settings for the mobile app: secrets are never returned, only whether they are set."""
     out: dict[str, Any] = {}
     for key in DEFAULTS:
         if key in INTERNAL_KEYS:
             continue
-        val = get(key)
+        val = get(key, user_id=user_id)
         if key in SECRET_KEYS:
             out[key] = {"is_set": bool(val)}
         else:
