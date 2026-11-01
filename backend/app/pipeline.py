@@ -264,7 +264,9 @@ def _create_application(db: Session, job: Job) -> int:
     method = "EMAIL" if job.apply_email else "MANUAL"
     cc = job.recruiter_email if job.recruiter_email and job.recruiter_email != job.apply_email else None
     status = AppStatus.QUEUED if method == "EMAIL" and store.get("auto_send") else AppStatus.AWAITING_USER
-    app = Application(job_id=job.id, cv_id=job.cv_id, method=method, status=status, to_email=job.apply_email, cc_email=cc)
+    cv = db.get(Cv, job.cv_id) if job.cv_id else None
+    owner_user_id = cv.user_id if cv else None
+    app = Application(user_id=owner_user_id, job_id=job.id, cv_id=job.cv_id, method=method, status=status, to_email=job.apply_email, cc_email=cc)
     db.add(app)
     db.flush()
     return app.id
@@ -700,6 +702,7 @@ def run_live_search(keywords: list[str], countries: list[str], limit_per_source:
             raw_jobs = fn(keywords, countries, limit=limit_per_source) if "limit" in fn.__code__.co_varnames else fn(keywords, countries)
             _store_jobs(raw_jobs)
             SourcesTracker.record_scan(name, count=len(raw_jobs))
+            evaluate_pending(limit=25)
             for r in raw_jobs:
                 results.append({
                     "source": r.source,

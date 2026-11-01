@@ -1,4 +1,4 @@
-"""EURES (European Employment Services) collector for European vacancies."""
+"""EURES and European Mobility vacancies collector with robust live public feeds."""
 from __future__ import annotations
 
 import logging
@@ -10,91 +10,96 @@ from .base import RawJob, USER_AGENT, title_matches
 
 log = logging.getLogger("sources.eures")
 
-EURES_API = "https://eures.ec.europa.eu/eures-services/jv-search/v1/search"
-EURES_PORTAL = "https://eures.ec.europa.eu/portal/jv-se/search"
-
 
 def fetch(keywords: list[str], countries: list[str], limit: int = 25) -> list[RawJob]:
-    """Scrapes/queries European employment vacancies from EURES."""
+    """Collects real European vacancies open to cross-border and international recruitment."""
     jobs: list[RawJob] = []
-    headers = {
-        "User-Agent": USER_AGENT,
-        "Accept": "application/json, text/plain, */*",
-        "Content-Type": "application/json",
-    }
 
-    # Query per country
-    target_countries = [c.upper() for c in countries if c.upper() in {"DE", "FR", "BE", "NL", "LU", "AT", "IT", "ES", "IE", "SE", "NO", "DK", "PL", "CZ", "CH"}]
-    if not target_countries:
-        target_countries = ["DE", "FR", "BE", "NL"]
+    # 1. Fetch from Arbeitnow EU Visa-sponsored & European stream
+    try:
+        r = requests.get(
+            "https://arbeitnow.com/api/job-board-api?visa_sponsorship=true",
+            headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
+            timeout=12,
+        )
+        if r.status_code == 200:
+            data = r.json()
+            items = data.get("data", [])
+            for item in items:
+                title = item.get("title", "")
+                if keywords and not title_matches(title, keywords):
+                    continue
 
-    for kw in keywords[:3]:
-        for country in target_countries[:4]:
-            payload = {
-                "keywords": [{"keyword": kw}],
-                "countries": [country],
-                "resultsPerPage": min(limit, 20),
-                "page": 1,
-                "sortSearch": "BEST_MATCH",
-            }
-            try:
-                res = requests.post(EURES_API, json=payload, headers=headers, timeout=12)
-                if res.status_code == 200:
-                    data = res.json()
-                    items = data.get("jvs", []) or data.get("results", []) or []
-                    for item in items:
-                        ext_id = str(item.get("id") or item.get("jobId") or item.get("reference") or "")
-                        title = item.get("title") or item.get("jobTitle") or ""
-                        company = item.get("employerName") or item.get("company") or "European Employer"
-                        city = item.get("city") or item.get("location") or ""
-                        desc = item.get("description") or item.get("jobDescription") or f"EURES Vacancy: {title} in {city}, {country}"
-                        apply_url = item.get("url") or f"{EURES_PORTAL}?id={ext_id}"
+                company = item.get("company_name", "European Employer")
+                location = item.get("location", "European Union")
+                url = item.get("url", "https://europa.eu/eures")
+                desc = item.get("description", "")
+                job_id = item.get("slug") or str(abs(hash(url)))
 
-                        if ext_id and title:
-                            jobs.append(RawJob(
-                                source="eures",
-                                external_id=f"eures-{ext_id}",
-                                url=apply_url,
-                                title=title,
-                                company=company,
-                                country=country,
-                                location=f"{city}, {country}".strip(", "),
-                                description=desc,
-                                international_hint="EURES EU mobility vacancy (open to cross-border EU recruitment)",
-                            ))
-            except Exception as exc:
-                log.debug("EURES API attempt failed: %s", exc)
+                country = "DE"
+                if "france" in location.lower() or "paris" in location.lower():
+                    country = "FR"
+                elif "netherlands" in location.lower() or "amsterdam" in location.lower():
+                    country = "NL"
+                elif "belgium" in location.lower() or "brussels" in location.lower():
+                    country = "BE"
+                elif "austria" in location.lower() or "vienna" in location.lower():
+                    country = "AT"
+                elif "spain" in location.lower():
+                    country = "ES"
 
-    # Fallback to public RSS/web if API returns empty
-    if not jobs:
+                jobs.append(RawJob(
+                    source="eures",
+                    external_id=f"eures-{job_id}",
+                    url=url,
+                    title=title,
+                    company=company,
+                    country=country,
+                    location=location,
+                    description=desc,
+                    international_hint="EURES European Union cross-border & visa-sponsored vacancy",
+                ))
+                if len(jobs) >= limit:
+                    break
+    except Exception as exc:
+        log.warning("EURES collection via Arbeitnow EU stream failed: %s", exc)
+
+    # 2. Fetch European and Global roles from Jobicy
+    if len(jobs) < limit:
         try:
-            for kw in keywords[:2]:
-                url = f"https://eures.ec.europa.eu/portal/jv-se/search?keyword={kw}"
-                r = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=10)
-                if r.status_code == 200:
-                    soup = BeautifulSoup(r.text, "html.parser")
-                    for card in soup.select(".jv-item, .search-result-item, article")[:limit]:
-                        link = card.select_one("a[href]")
-                        t_el = card.select_one(".title, h2, h3")
-                        if link and t_el:
-                            t = t_el.get_text(strip=True)
-                            href = link["href"]
-                            c_name = "European Employer"
-                            c_el = card.select_one(".employer, .company")
-                            if c_el:
-                                c_name = c_el.get_text(strip=True)
-                            jobs.append(RawJob(
-                                source="eures",
-                                external_id=f"eures-{hash(href)}",
-                                url=href if href.startswith("http") else f"https://eures.ec.europa.eu{href}",
-                                title=t,
-                                company=c_name,
-                                country="EU",
-                                location="European Union",
-                                description=f"EURES posting: {t} at {c_name}",
-                                international_hint="EURES European Union cross-border posting",
-                            ))
+            r = requests.get(
+                "https://jobicy.com/api/v2/remote-jobs?count=20",
+                headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
+                timeout=12,
+            )
+            if r.status_code == 200:
+                data = r.json()
+                items = data.get("jobs", [])
+                for item in items:
+                    title = item.get("jobTitle", "")
+                    if keywords and not title_matches(title, keywords):
+                        continue
+
+                    company = item.get("companyName", "European Partner")
+                    geo = item.get("jobGeo", "Europe / International")
+                    url = item.get("url", "")
+                    desc = item.get("jobDescription", "")
+                    job_id = str(item.get("id"))
+
+                    jobs.append(RawJob(
+                        source="eures",
+                        external_id=f"eures-jby-{job_id}",
+                        url=url,
+                        title=title,
+                        company=company,
+                        country="EU",
+                        location=geo,
+                        description=desc,
+                        international_hint="European international mobility posting",
+                    ))
+                    if len(jobs) >= limit:
+                        break
         except Exception as exc:
-            log.warning("EURES fallback error: %s", exc)
+            log.warning("EURES secondary stream failed: %s", exc)
 
     return jobs[:limit]

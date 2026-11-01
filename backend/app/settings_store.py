@@ -64,6 +64,15 @@ DEFAULTS: dict[str, Any] = {
 INTERNAL_KEYS = {"imap_last_uid", "telegram_update_offset"}
 
 
+USER_ISOLATED_KEYS = {
+    "full_name", "phone", "gmail_address", "gmail_app_password",
+    "telegram_bot_token", "telegram_chat_id", "whatsapp_phone", "callmebot_apikey",
+    "target_countries", "search_keywords", "notification_language",
+    "engine_paused", "daily_limit", "min_match_score", "auto_send",
+    "notify_manual_review", "follow_up_days", "allow_unclear_eligibility"
+}
+
+
 def get(key: str, user_id: int | None = None) -> Any:
     with session_scope() as s:
         if user_id is not None:
@@ -74,6 +83,9 @@ def get(key: str, user_id: int | None = None) -> Any:
                     return json.loads(raw)
                 except (json.JSONDecodeError, TypeError):
                     return raw
+            # For user-isolated keys, never leak global settings to a user
+            if key in USER_ISOLATED_KEYS:
+                return DEFAULTS.get(key)
 
         row = s.get(SettingRow, key)
         if row is None:

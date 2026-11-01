@@ -1,41 +1,47 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Professional Corporate Color Palette (Trust, Professionalism, Comfort)
-  static const Color scaffoldBg = Color(0xFFF8FAFC); // Soft light slate / blue
-  static const Color surface = Color(0xFFFFFFFF); // Pure crisp white
-  static const Color card = Color(0xFFFFFFFF);
-  static const Color border = Color(0xFFE2E8F0); // Subtle slate border
-  static const Color borderFocus = Color(0xFF2563EB); // Royal Blue focus
+  // Professional Premium Corporate Color Palette (VisaJob AI v3.2)
+  // Primary: #0E7C66 (Deep Emerald / Teal)
+  // Secondary: #D4A017 (Gold / Amber Luxury)
+  // Accent: #16213E (Navy / Deep Blue)
+  // Background: #1E1E24 (Charcoal Dark)
+  // Cards: #2A2A35 (Slate Deep Card)
 
-  // Primary & Accents
-  static const Color primary = Color(0xFF1E40AF); // Deep Royal Blue
-  static const Color primaryLight = Color(0xFF3B82F6); // Soft Bright Blue
-  static const Color primarySoft = Color(0xFFEFF6FF); // Ultra-soft Blue tint
-  static const Color secondary = Color(0xFF0D9488); // Professional Teal
-  static const Color secondarySoft = Color(0xFFF0FDFA); // Ultra-soft Teal tint
-  static const Color accent = Color(0xFF6366F1); // Indigo
+  static const Color primary = Color(0xFF0E7C66); // Emerald / Forest Teal
+  static const Color primaryLight = Color(0xFF14B8A6); // Bright Teal
+  static const Color primarySoft = Color(0xFF133E35); // Soft Dark Teal tint
+
+  static const Color secondary = Color(0xFFD4A017); // Royal Gold / Amber
+  static const Color secondarySoft = Color(0xFF382F15); // Soft Gold tint
+  
+  static const Color accent = Color(0xFF16213E); // Navy Dark
+  static const Color scaffoldBg = Color(0xFF1E1E24); // Charcoal Dark Background
+  static const Color surface = Color(0xFF2A2A35); // Deep Slate Card Surface
+  static const Color card = Color(0xFF2A2A35); // Card Background
+  static const Color border = Color(0xFF3A3A48); // Subtle border
+  static const Color borderFocus = Color(0xFF0E7C66); // Teal Focus
 
   // Semantic Status Colors
   static const Color success = Color(0xFF10B981); // Emerald Green
-  static const Color warning = Color(0xFFF59E0B); // Amber / Caution
+  static const Color warning = Color(0xFFD4A017); // Gold / Warning
   static const Color danger = Color(0xFFEF4444); // Error Red
 
   // High-Contrast Legible Typography
-  static const Color textPrimary = Color(0xFF0F172A); // Dark Slate (near black)
-  static const Color textSecondary = Color(0xFF334155); // Medium Slate
-  static const Color textMuted = Color(0xFF64748B); // Slate muted
+  static const Color textPrimary = Color(0xFFF8FAFC); // Crisp Off-White
+  static const Color textSecondary = Color(0xFFCBD5E1); // Light Slate
+  static const Color textMuted = Color(0xFF94A3B8); // Muted Slate
 
   // Backwards compatibility aliases
   static const Color bgDark = scaffoldBg;
 
-  static ThemeData get lightTheme {
+  static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
+      brightness: Brightness.dark,
       scaffoldBackgroundColor: scaffoldBg,
       primaryColor: primary,
-      colorScheme: const ColorScheme.light(
+      colorScheme: const ColorScheme.dark(
         primary: primary,
         secondary: secondary,
         surface: surface,
@@ -45,29 +51,27 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         color: card,
-        elevation: 0.5,
-        shadowColor: Colors.black.withValues(alpha: 0.05),
+        elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: border, width: 1.2),
         ),
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: surface,
+        backgroundColor: scaffoldBg,
         elevation: 0,
-        scrolledUnderElevation: 1,
-        shadowColor: Colors.black12,
+        scrolledUnderElevation: 0,
         titleTextStyle: TextStyle(
           color: textPrimary,
           fontSize: 18,
           fontWeight: FontWeight.bold,
           letterSpacing: 0.5,
         ),
-        iconTheme: IconThemeData(color: primary),
+        iconTheme: IconThemeData(color: primaryLight),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: surface,
-        selectedItemColor: primary,
+        selectedItemColor: secondary,
         unselectedItemColor: textMuted,
         type: BottomNavigationBarType.fixed,
         elevation: 10,
@@ -76,7 +80,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: const Color(0xFF23232C),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: border, width: 1.2),
@@ -87,7 +91,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: borderFocus, width: 1.8),
+          borderSide: const BorderSide(color: primaryLight, width: 1.8),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -104,12 +108,12 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 0.3),
-          elevation: 1,
+          elevation: 0,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: primary,
+          foregroundColor: primaryLight,
           side: const BorderSide(color: border, width: 1.2),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -125,16 +129,16 @@ class AppTheme {
   }
 
   // Alias for backward compatibility
-  static ThemeData get darkTheme => lightTheme;
+  static ThemeData get lightTheme => darkTheme;
 
   static BoxDecoration glassCardDecoration({double opacity = 1.0, double radius = 16, Color? borderColor}) {
     return BoxDecoration(
-      color: Colors.white.withValues(alpha: opacity),
+      color: card.withValues(alpha: opacity),
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(color: borderColor ?? border, width: 1.2),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.04),
+          color: Colors.black.withValues(alpha: 0.25),
           blurRadius: 10,
           offset: const Offset(0, 4),
         ),

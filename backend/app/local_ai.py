@@ -430,7 +430,9 @@ class LocalIntelligentEngine:
         red_flags = []
         risk_rating = "SAFE"
 
-        if any(w in text_lower for w in ["western union", "moneygram", "crypto", "pay for visa", "visa processing fee", "refundable deposit"]):
+        if any(w in text_lower for w in ["western union", "moneygram", "crypto", "pay for visa", "visa processing fee", "refundable deposit"]) or (
+            any(w in text_lower for w in ["western union", "moneygram", "crypto", "pay", "fee", "deposit", "upfront", "wire"]) and any(w in text_lower for w in ["visa", "processing", "permit", "relocation", "flight", "contract"])
+        ):
             red_flags.append("Contract demands candidate payment or visa processing fee (Hallmark of advance-fee employment fraud).")
             risk_rating = "HIGH_RISK"
 

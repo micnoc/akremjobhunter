@@ -232,7 +232,7 @@ def get_admin_user_detail(user_id: int, db: Session = Depends(get_db)) -> dict[s
 def trigger_collector(bg: BackgroundTasks) -> dict[str, Any]:
     """Triggers an immediate job discovery cycle across all international sources."""
     def run_job():
-        pipeline.task_discover_jobs()
+        pipeline.discover()
 
     bg.add_task(run_job)
     return {"message": "Job discovery worker triggered successfully in background."}
@@ -242,7 +242,7 @@ def trigger_collector(bg: BackgroundTasks) -> dict[str, Any]:
 def trigger_evaluator(bg: BackgroundTasks) -> dict[str, Any]:
     """Triggers an immediate evaluation of newly discovered jobs against active candidate CVs."""
     def run_eval():
-        pipeline.task_evaluate_new_jobs()
+        pipeline.evaluate_pending()
 
     bg.add_task(run_eval)
     return {"message": "Job evaluation worker triggered successfully in background."}

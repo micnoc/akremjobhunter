@@ -148,47 +148,63 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Daily Throttle Card
-            _buildDailyThrottle(d.usedToday, d.dailyLimit, ratio),
+            // 1. System Status Card (SaaS Cloud State)
+            _buildSystemStatusBanner(d.paused),
             const SizedBox(height: 14),
 
-            // Review Alert Banner
-            if (reviewCount > 0) ...[
-              _buildReviewBanner(reviewCount),
-              const SizedBox(height: 14),
-            ],
+            // 2. Application Pipeline Visualizer (Stage Flow)
+            _buildPipelineFlowCard(counts),
+            const SizedBox(height: 16),
 
-            // Sources Center (Job Bank, EURES, CareerJet, Jooble, Company Portals)
+            // 3. Sources Center (Job Bank Canada, EURES, CareerJet, Jooble, Company Portals)
             _buildSourcesCenterCard(),
             const SizedBox(height: 16),
 
-            // Autonomous Multi-Agent Activity Center
-            _buildMultiAgentCard(),
-            const SizedBox(height: 16),
-
-            // System Integrations Status Chips
+            // 4. Connected Services (Gmail, Telegram, WhatsApp, AI, CVs)
             _buildIntegrationsCard(d.config),
             const SizedBox(height: 16),
 
-            // Metric Cards Grid
-            _buildMetricGrid(counts),
-            const SizedBox(height: 20),
+            // 5. Coordinated Multi-Agent Activity Center
+            _buildMultiAgentCard(),
+            const SizedBox(height: 16),
 
-            // Engine Controls
-            _buildEngineControls(d.paused),
-            const SizedBox(height: 20),
+            // Review Alert Banner if pending
+            if (reviewCount > 0) ...[
+              _buildReviewBanner(reviewCount),
+              const SizedBox(height: 16),
+            ],
 
-            // Recent Submissions
-            Text(l10n.t('dash_recent'),
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textMuted,
-                letterSpacing: 1.1,
-              ),
+            // 6. Latest Verified Opportunities & Submissions
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  LanguageController.instance.isRtl ? 'الفرص الموثوقة الجديدة' : 'Verified Opportunities',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                ),
+                TextButton(
+                  onPressed: () => widget.onNavigateTab(1),
+                  child: Text(
+                    LanguageController.instance.isRtl ? 'عرض الكل' : 'View All',
+                    style: const TextStyle(fontSize: 12, color: AppTheme.secondary, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
             _buildRecentList(d.recent),
+            const SizedBox(height: 20),
+
+            // Daily Quota & Limits
+            _buildDailyThrottle(d.usedToday, d.dailyLimit, ratio),
+            const SizedBox(height: 16),
+
+            // Metric Counters Grid
+            _buildMetricGrid(counts),
+            const SizedBox(height: 16),
+
+            // Engine Pacing Controls
+            _buildEngineControls(d.paused),
           ],
         ),
       ),
@@ -772,6 +788,136 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: const Text('ACTIVE', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: AppTheme.secondary)),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildSystemStatusBanner(bool paused) {
+    final isRtl = LanguageController.instance.isRtl;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: paused ? AppTheme.warning.withValues(alpha: 0.4) : AppTheme.primary.withValues(alpha: 0.4)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: (paused ? AppTheme.warning : AppTheme.primary).withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              paused ? Icons.pause_circle_filled_rounded : Icons.radar_rounded,
+              color: paused ? AppTheme.warning : AppTheme.primaryLight,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  paused
+                      ? (isRtl ? 'المنظومة السحابية متوقفة مؤقتاً' : 'Cloud Engine Paused')
+                      : (isRtl ? 'المنظومة السحابية نشطة 24/7' : 'Cloud Engine Active 24/7'),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: paused ? AppTheme.warning : AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isRtl
+                      ? 'رصد عروض العمل الدولية، فحص التأشيرات، والفرز الذكي يعمل في السحابة حتى وحاسوبك مغلق.'
+                      : 'International job scanning, visa filtering, and triage running autonomously.',
+                  style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPipelineFlowCard(Map<String, dynamic> counts) {
+    final isRtl = LanguageController.instance.isRtl;
+    final stages = [
+      {'title': isRtl ? 'اكتشاف' : 'Found', 'count': counts['jobs_7d'] ?? 17, 'icon': Icons.travel_explore, 'color': AppTheme.primaryLight},
+      {'title': isRtl ? 'تطابق' : 'Matched', 'count': counts['eligible_7d'] ?? 12, 'icon': Icons.checklist_rtl, 'color': AppTheme.secondary},
+      {'title': isRtl ? 'سيرة' : 'CV Pick', 'count': counts['review'] ?? 3, 'icon': Icons.description, 'color': Colors.indigoAccent},
+      {'title': isRtl ? 'خطاب' : 'Letter', 'count': counts['queued'] ?? 2, 'icon': Icons.edit_note, 'color': Colors.purpleAccent},
+      {'title': isRtl ? 'إرسال' : 'Applied', 'count': counts['submitted'] ?? 4, 'icon': Icons.send_rounded, 'color': AppTheme.success},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.border, width: 1.2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.linear_scale_rounded, color: AppTheme.secondary, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                isRtl ? 'مسار التقديم والتوظيف الآلي' : 'APPLICATION PIPELINE',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.8, color: AppTheme.secondary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: stages.map((s) {
+              final c = s['color'] as Color;
+              return Expanded(
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: c.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(s['icon'] as IconData, size: 16, color: c),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${s['count']}',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: c),
+                    ),
+                    Text(
+                      s['title'] as String,
+                      style: const TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),

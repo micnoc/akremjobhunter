@@ -115,12 +115,12 @@ def dashboard(current_user: User = Depends(get_current_user), db: Session = Depe
 
     # Isolated application counts for current user
     app_query = select(Application.status, func.count()).where(
-        or_(Application.user_id == current_user.id, Application.user_id.is_(None))
+        Application.user_id == current_user.id
     ).group_by(Application.status)
     status_counts = dict(db.execute(app_query).all())
 
     recent_stmt = select(Application).where(
-        or_(Application.user_id == current_user.id, Application.user_id.is_(None))
+        Application.user_id == current_user.id
     ).order_by(Application.id.desc()).limit(8)
     recent = db.scalars(recent_stmt)
 
@@ -168,7 +168,7 @@ def list_applications(
     db: Session = Depends(get_db),
 ) -> dict:
     stmt = select(Application).where(
-        or_(Application.user_id == current_user.id, Application.user_id.is_(None))
+        Application.user_id == current_user.id
     ).order_by(Application.id.desc())
 
     if bucket in BUCKETS:
