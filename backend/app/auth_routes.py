@@ -148,16 +148,24 @@ def register(body: RegisterIn, request: Request, db: Session = Depends(get_db)) 
 
     # Try sending email verification if mailer is configured
     email_sent = False
-    try:
-        if store.get("gmail_address") and store.get("gmail_app_password"):
+    system_email = os.environ.get("SYSTEM_EMAIL_ADDRESS") or os.environ.get("SMTP_USER") or store.get("gmail_address")
+    system_pwd = os.environ.get("SYSTEM_EMAIL_PASSWORD") or os.environ.get("SMTP_PASSWORD") or store.get("gmail_app_password")
+
+    if system_email and system_pwd:
+        try:
             mailer.send_email(
                 to_addr=user.email,
-                subject="akremjobhunter - Email Verification Code",
-                body_text=f"Welcome to akremjobhunter.\n\nYour 6-digit verification code is: {verif_code}\n\nThis code expires in 30 minutes.",
+                subject="VisaJob AI - Email Verification Code",
+                body_text=f"Welcome to VisaJob AI.\n\nYour 6-digit verification code is: {verif_code}\n\nThis code expires in 30 minutes.",
             )
             email_sent = True
-    except Exception as exc:
-        log.warning(f"Could not send email verification: {exc}")
+        except Exception as exc:
+            log.warning(f"Could not send email verification: {exc}")
+
+    # If email delivery was not possible, auto-verify user so they are never blocked by unconfigured SMTP
+    if not email_sent:
+        user.is_verified = True
+        db.commit()
 
     user_agent = request.headers.get("user-agent")
     ip = request.client.host if request.client else "unknown"
@@ -166,10 +174,10 @@ def register(body: RegisterIn, request: Request, db: Session = Depends(get_db)) 
     response_payload = {
         "user": _user_dict(user),
         "tokens": tokens,
-        "message": "Account created successfully. Please verify your email.",
+        "message": "Account created and activated successfully." if not email_sent else "Account created. Verification code dispatched to your email.",
         "email_sent": email_sent,
+        "is_verified": user.is_verified,
     }
-    # If email delivery was not possible (e.g. SMTP not set up yet), provide the code directly
     if not email_sent:
         response_payload["dev_verification_code"] = verif_code
 

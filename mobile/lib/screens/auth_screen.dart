@@ -173,8 +173,12 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       setState(() => _regLoading = false);
 
       final devCode = regRes['dev_verification_code'] as String?;
-      // Prompt email verification (with fallback code if email is unconfigured)
-      _showVerificationDialog(email, initialCode: devCode);
+      final isVerified = regRes['is_verified'] == true || regRes['user']?['is_verified'] == true;
+      if (isVerified) {
+        _navigateToMain();
+      } else {
+        _showVerificationDialog(email, initialCode: devCode);
+      }
     } catch (e) {
       setState(() {
         _regLoading = false;

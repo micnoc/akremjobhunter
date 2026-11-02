@@ -6,6 +6,7 @@ class DashboardData {
   final int dailyLimit;
   final Map<String, dynamic> counts;
   final List<dynamic> recent;
+  final List<dynamic> verifiedJobs;
 
   DashboardData({
     required this.paused,
@@ -15,6 +16,7 @@ class DashboardData {
     required this.dailyLimit,
     required this.counts,
     required this.recent,
+    this.verifiedJobs = const [],
   });
 
   factory DashboardData.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class DashboardData {
       dailyLimit: quota['limit'] ?? 20,
       counts: (json['counts'] as Map<String, dynamic>?) ?? {},
       recent: (json['recent'] as List<dynamic>?) ?? [],
+      verifiedJobs: (json['verified_jobs'] as List<dynamic>?) ?? [],
     );
   }
 }

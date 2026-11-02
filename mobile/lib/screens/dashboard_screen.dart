@@ -184,13 +184,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  LanguageController.instance.isRtl ? 'الفرص الموثوقة الجديدة' : 'Verified Opportunities',
+                  LanguageController.instance.currentLocale.languageCode == 'ar'
+                      ? 'الفرص الوظيفية الموثوقة المتاحة'
+                      : (LanguageController.instance.currentLocale.languageCode == 'fr'
+                          ? 'Offres vérifiées récentes'
+                          : 'Verified Opportunities'),
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.8),
                 ),
                 TextButton(
-                  onPressed: () => widget.onNavigateTab(1),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const JobsExplorerScreen())),
                   child: Text(
-                    LanguageController.instance.isRtl ? 'عرض الكل' : 'View All',
+                    LanguageController.instance.currentLocale.languageCode == 'ar'
+                        ? 'عرض كافة الفرص ↗'
+                        : (LanguageController.instance.currentLocale.languageCode == 'fr'
+                            ? 'Voir tout ↗'
+                            : 'View All ↗'),
                     style: const TextStyle(fontSize: 12, color: AppTheme.secondary, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -252,8 +260,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Distributed evenly across 24h with random jitter to mimic human behavior and avoid rate limits.',
+          Text(
+            LanguageController.instance.currentLocale.languageCode == 'ar' ? 'موزعة على مدار 24 ساعة بتباعد زمني بشري لتفادي حدود الإرسال.' : (LanguageController.instance.currentLocale.languageCode == 'fr' ? 'Réparti régulièrement sur 24h avec un intervalle humain pour éviter les limites de débit.' : 'Distributed evenly across 24h with random jitter to mimic human behavior and avoid rate limits.'),
             style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
           ),
         ],
@@ -344,7 +352,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildMetricGrid(Map<String, dynamic> c) {
-    final isAr = LanguageController.instance.isRtl;
+    final lang = LanguageController.instance.currentLocale.languageCode;
+    final isAr = lang == 'ar';
+    final isFr = lang == 'fr';
     return GridView.count(
       crossAxisCount: 2,
       crossAxisSpacing: 10,
@@ -354,30 +364,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
       childAspectRatio: 1.6,
       children: [
         _buildStatCard(
-          isAr ? 'عروض تم فحصها (7 أيام)' : 'JOBS ANALYSED (7D)',
+          isAr ? 'عروض تم فحصها (7 أيام)' : (isFr ? 'OFFRES ANALYSÉES (7J)' : 'JOBS ANALYSED (7D)'),
           '${c['jobs_7d'] ?? 0}',
-          isAr ? 'اضغط للاستعراض والتقديم ↗' : 'Tap to Browse & Apply ↗',
+          isAr ? 'اضغط للاستعراض والتقديم ↗' : (isFr ? 'Explorer et postuler ↗' : 'Tap to Browse & Apply ↗'),
           AppTheme.primary,
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const JobsExplorerScreen())),
         ),
         _buildStatCard(
-          isAr ? 'فرص تدعم التأشيرة وLMIA' : 'ELIGIBLE MATCHES',
+          isAr ? 'فرص تدعم التأشيرة وLMIA' : (isFr ? 'ÉLIGIBLES INTERNATIONAL' : 'ELIGIBLE MATCHES'),
           '${c['eligible_7d'] ?? 0}',
-          isAr ? 'تأشيرة مفتوحة / كفالة معتمدة ↗' : 'LMIA / Visa / Open ↗',
+          isAr ? 'تأشيرة مفتوحة / كفالة معتمدة ↗' : (isFr ? 'Visa / LMIA / Ouvert ↗' : 'LMIA / Visa / Open ↗'),
           AppTheme.accent,
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const JobsExplorerScreen())),
         ),
         _buildStatCard(
-          isAr ? 'ترشحات مرسلة وموثقة' : 'APPLICATIONS SUBMITTED',
+          isAr ? 'ترشحات مرسلة وموثقة' : (isFr ? 'CANDIDATURES ENVOYÉES' : 'APPLICATIONS SUBMITTED'),
           '${c['submitted'] ?? 0}',
-          isAr ? 'أرشيف تقديمات بدون تكرار' : 'Zero-Duplicate Archive',
+          isAr ? 'أرشيف تقديمات بدون تكرار' : (isFr ? 'Archives certifiées sans doublons' : 'Zero-Duplicate Archive'),
           AppTheme.textMuted,
           onTap: () => widget.onNavigateTab(1),
         ),
         _buildStatCard(
-          isAr ? 'مقابلات وعروض قبول' : 'INTERVIEWS / OFFERS',
+          isAr ? 'مقابلات وعروض قبول' : (isFr ? 'ENTRETIENS / OFFRES' : 'INTERVIEWS / OFFERS'),
           '${(c['interviews'] ?? 0) + (c['offers'] ?? 0)}',
-          isAr ? 'ردود إيجابية مؤكدة' : 'Verified Responses',
+          isAr ? 'ردود إيجابية مؤكدة' : (isFr ? 'Réponses vérifiées' : 'Verified Responses'),
           AppTheme.secondary,
           onTap: () => widget.onNavigateTab(1),
         ),
@@ -425,7 +435,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: OutlinedButton.icon(
                 onPressed: () => _trigger('discover'),
                 icon: const Icon(Icons.travel_explore, size: 16),
-                label: Text(isAr ? 'فحص الوظائف' : 'Scan Jobs', style: const TextStyle(fontSize: 12)),
+                label: Text(
+                  LanguageController.instance.currentLocale.languageCode == 'ar'
+                      ? 'فحص الوظائف'
+                      : (LanguageController.instance.currentLocale.languageCode == 'fr'
+                          ? 'Scanner offres'
+                          : 'Scan Jobs'),
+                  style: const TextStyle(fontSize: 12),
+                ),
               ),
             ),
             const SizedBox(width: 8),
@@ -433,7 +450,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: OutlinedButton.icon(
                 onPressed: () => _trigger('inbox'),
                 icon: const Icon(Icons.mark_email_read, size: 16),
-                label: Text(isAr ? 'فحص الوارد' : 'Scan Inbox', style: const TextStyle(fontSize: 12)),
+                label: Text(
+                  LanguageController.instance.currentLocale.languageCode == 'ar'
+                      ? 'فحص الوارد'
+                      : (LanguageController.instance.currentLocale.languageCode == 'fr'
+                          ? 'Scanner boîte'
+                          : 'Scan Inbox'),
+                  style: const TextStyle(fontSize: 12),
+                ),
               ),
             ),
             const SizedBox(width: 8),
@@ -449,7 +473,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildRecentList(List<dynamic> list) {
-    if (list.isEmpty) {
+    final lang = LanguageController.instance.currentLocale.languageCode;
+    final isAr = lang == 'ar';
+    final isFr = lang == 'fr';
+    final verified = _data?.verifiedJobs ?? [];
+
+    if (list.isEmpty && verified.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -457,25 +486,96 @@ class _DashboardScreenState extends State<DashboardScreen> {
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: AppTheme.border),
         ),
-        child: const Center(
-          child: Text('No submissions recorded yet.', style: TextStyle(color: AppTheme.textMuted, fontSize: 12)),
+        child: Center(
+          child: Text(
+            isAr
+                ? 'لا توجد عروض مفحوصة حالياً. اضغط على "فحص الوظائف" لبدء البحث الفوري.'
+                : (isFr
+                    ? 'Aucune offre pour le moment. Cliquez sur "Scanner offres" pour lancer la recherche.'
+                    : 'No opportunities found yet. Tap "Scan Jobs" to discover vacancies.'),
+            style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+          ),
         ),
       );
     }
 
+    // If applications exist, show them
+    if (list.isNotEmpty) {
+      return Column(
+        children: list.map((item) {
+          final title = item['title'] ?? '';
+          final comp = item['company'] ?? '';
+          final country = item['country'] ?? '';
+          final status = item['status'] ?? '';
+          final score = item['score'];
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.card,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppTheme.border),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      const SizedBox(height: 2),
+                      Text('$comp • $country', style: const TextStyle(color: AppTheme.textMuted, fontSize: 11)),
+                    ],
+                  ),
+                ),
+                if (score != null) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary.withAlpha(30),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text('$score%', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primary)),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Text(
+                  status,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: status == 'SENT' || status == 'APPLIED_MANUAL'
+                        ? AppTheme.secondary
+                        : status == 'INTERVIEW'
+                            ? Colors.purpleAccent
+                            : AppTheme.warning,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      );
+    }
+
+    // Otherwise show verified live jobs discovered by the scrapers!
     return Column(
-      children: list.map((item) {
+      children: verified.map((item) {
         final title = item['title'] ?? '';
         final comp = item['company'] ?? '';
-        final country = item['country'] ?? '';
-        final status = item['status'] ?? '';
-        final score = item['score'];
+        final country = (item['country'] ?? 'CA').toString().toUpperCase();
+        final score = item['score'] ?? 80;
+        final elig = (item['eligibility'] ?? 'VISA_SPONSORED').toString().replaceAll('_', ' ');
+        final id = item['id'] as int;
+
+        final flag = country == 'CA' ? '🇨🇦' : country == 'DE' ? '🇩🇪' : country == 'FR' ? '🇫🇷' : country == 'GB' ? '🇬🇧' : country == 'US' ? '🇺🇸' : '🌍';
+
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: AppTheme.card,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(color: AppTheme.border),
           ),
           child: Row(
@@ -486,31 +586,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     const SizedBox(height: 2),
-                    Text('$comp • $country', style: const TextStyle(color: AppTheme.textMuted, fontSize: 11)),
+                    Text('$flag $comp • $country • $elig', style: const TextStyle(color: AppTheme.textMuted, fontSize: 11)),
                   ],
                 ),
               ),
-              if (score != null) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary.withAlpha(30),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text('$score%', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primary)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withAlpha(30),
+                  borderRadius: BorderRadius.circular(4),
                 ),
-                const SizedBox(width: 8),
-              ],
-              Text(
-                status,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: status == 'SENT' || status == 'APPLIED_MANUAL'
-                      ? AppTheme.secondary
-                      : status == 'INTERVIEW'
-                          ? Colors.purpleAccent
-                          : AppTheme.warning,
+                child: Text('$score% ATS', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppTheme.primary)),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    await ApiService.quickApplyJob(id);
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(isAr ? 'تم تسجيل التقديم وتوليد خطاب التقديم بنجاح!' : (isFr ? 'Candidature enregistrée avec succès!' : 'Application queued successfully!'))),
+                    );
+                    _load();
+                  } catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  minimumSize: Size.zero,
+                ),
+                child: Text(
+                  isAr ? 'تقديم' : (isFr ? 'Postuler' : 'Apply'),
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
