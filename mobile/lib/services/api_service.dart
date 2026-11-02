@@ -241,15 +241,16 @@ class ApiService {
     throw Exception(err['detail'] ?? 'Verification failed');
   }
 
-  static Future<void> resendVerification() async {
+  static Future<Map<String, dynamic>> resendVerification() async {
     final res = await http.post(
       Uri.parse('$serverUrl/api/v1/auth/resend-verification'),
       headers: _headers,
     );
-    if (res.statusCode != 200) {
-      final err = jsonDecode(res.body);
-      throw Exception(err['detail'] ?? 'Failed to resend code');
+    if (res.statusCode == 200) {
+      return jsonDecode(utf8.decode(res.bodyBytes));
     }
+    final err = jsonDecode(res.body);
+    throw Exception(err['detail'] ?? 'Failed to resend code');
   }
 
   static Future<void> forgotPassword(String email) async {
@@ -646,7 +647,7 @@ class ApiService {
   }
 
   // ================================================================= V3.2 Real AI Assistant & Document Analysis
-  static Future<String> sendChatMessage(String prompt, {String? docType, String? docText}) async {
+  static Future<String> sendChatMessage(String prompt, {String? docType, String? docText, String? language}) async {
     final res = await http.post(
       Uri.parse('$serverUrl/api/v1/ai/chat'),
       headers: _headers,
@@ -654,6 +655,7 @@ class ApiService {
         'prompt': prompt,
         'doc_type': docType,
         'document_text': docText,
+        'language': language,
       }),
     );
     if (res.statusCode == 200) {
@@ -723,4 +725,50 @@ class ApiService {
   static Future<void> markNotificationRead(int id) async {
     await http.post(Uri.parse('$serverUrl/api/v1/notifications/$id/read'), headers: _headers);
   }
+
+  // ================================================================= Analyzed Jobs Explorer
+  static Future<Map<String, dynamic>> getAnalyzedJobs({
+    int limit = 50,
+    int offset = 0,
+    String? country,
+    String? source,
+  }) async {
+    final queryParams = <String, String>{
+      'limit': limit.toString(),
+      'offset': offset.toString(),
+      if (country != null && country.isNotEmpty && country != 'ALL') 'country': country,
+      if (source != null && source.isNotEmpty && source != 'ALL') 'source': source,
+    };
+    final uri = Uri.parse('$serverUrl/api/v1/jobs/analyzed').replace(queryParameters: queryParams);
+    final res = await http.get(uri, headers: _headers);
+    if (res.statusCode == 200) {
+      return jsonDecode(utf8.decode(res.bodyBytes));
+    }
+    throw Exception('Failed to load analyzed jobs: HTTP ${res.statusCode}');
+  }
+
+  static Future<Map<String, dynamic>> quickApplyJob(int jobId) async {
+    final res = await http.post(
+      Uri.parse('$serverUrl/api/v1/jobs/$jobId/apply'),
+      headers: _headers,
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(utf8.decode(res.bodyBytes));
+    }
+    throw Exception(jsonDecode(utf8.decode(res.bodyBytes))['detail'] ?? 'Application failed');
+  }
+
+  static Future<Map<String, dynamic>> runAgentCycle(String agentName) async {
+    final res = await http.post(
+      Uri.parse('$serverUrl/api/v1/agents/run-cycle'),
+      headers: _headers,
+      body: jsonEncode({'agent_name': agentName}),
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(utf8.decode(res.bodyBytes));
+    }
+    throw Exception('Failed to run agent cycle');
+  }
+
+
 }

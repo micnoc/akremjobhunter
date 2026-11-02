@@ -337,93 +337,198 @@ class LocalIntelligentEngine:
         )
 
     @staticmethod
-    def chat(prompt: str, history: list[dict] | None = None, document_text: str | None = None, doc_type: str | None = None) -> str:
-        prompt_lower = prompt.lower()
-        doc_snippet = (document_text or "")[:4000]
+    def chat(prompt: str, history: list[dict] | None = None, document_text: str | None = None, doc_type: str | None = None, language: str | None = None) -> str:
+        prompt_clean = prompt.strip()
+        prompt_lower = prompt_clean.lower()
+        doc_snippet = (document_text or "")[:5000]
 
-        # 1. Document analysis requested
-        if doc_snippet:
-            if doc_type == "contract" or "contract" in prompt_lower or "عقد" in prompt_lower:
-                analysis = LocalIntelligentEngine.analyze_contract(doc_snippet)
-                red_flags_str = "\n".join(f"  ⚠️ {rf}" for rf in analysis.get('red_flags', [])) if analysis.get('red_flags') else "  ✅ No illegal payment or withholding clauses detected."
-                return (
-                    f"📋 **Contract Analysis Report**\n\n"
-                    f"• **Risk Rating:** {analysis['risk_rating']}\n"
-                    f"• **Compensation Identified:** {analysis.get('compensation', 'Not explicitly stated')}\n"
-                    f"• **Visa Sponsorship Clause:** {analysis.get('sponsorship_status', 'No explicit commitment')}\n"
-                    f"• **Red Flags Detected:** {len(analysis.get('red_flags', []))}\n"
-                    f"{red_flags_str}\n\n"
-                    f"💡 **Legal Recommendation:** {analysis.get('recommendation', 'Carefully verify employer registration before signing.')}"
-                )
-
-            if doc_type == "cv" or "ats" in prompt_lower or "سيرة" in prompt_lower:
-                ats = LocalIntelligentEngine.analyze_cv_ats(doc_snippet)
-                recs_str = "\n".join(f"  • {rec}" for rec in ats['recommendations'])
-                return (
-                    f"🎯 **ATS Compatibility & CV Evaluation**\n\n"
-                    f"• **ATS Score:** {ats['ats_score']}/100\n"
-                    f"• **Identified Sector:** {ats['sector']}\n"
-                    f"• **Primary Skills Detected:** {', '.join(ats['detected_skills'][:10])}\n"
-                    f"• **Missing Recommended Keywords:** {', '.join(ats['missing_keywords'][:6])}\n\n"
-                    f"🚀 **Actionable Recommendations:**\n"
-                    f"{recs_str}"
-                )
-
-            if doc_type == "offer" or "offer" in prompt_lower or "عرض" in prompt_lower:
-                offer = LocalIntelligentEngine.analyze_offer_letter(doc_snippet)
-                return (
-                    f"💼 **Job Offer Letter Verification**\n\n"
-                    f"• **Verification Status:** {offer['status']}\n"
-                    f"• **Authenticity Score:** {offer['authenticity_score']}/100\n"
-                    f"• **Employer Entity:** {offer.get('employer', 'Not recognized')}\n"
-                    f"• **Observations:** {offer['summary']}"
-                )
-
-        # 2. Employment & Immigration Questions
-        if any(w in prompt_lower for w in ["canada", "كندا", "lmia", "express entry"]):
-            return (
-                "🇨🇦 **Canada Immigration & Employment Pathways:**\n\n"
-                "1. **Job Bank Canada (fglo=1):** Employers verified to recruit outside Canada under LMIA-approved streams.\n"
-                "2. **Express Entry (Federal Skilled Worker):** Requires language test (CLB 7+ in IELTS or TEF) and Educational Credential Assessment (ECA).\n"
-                "3. **Mobilité Francophone:** Exempts Canadian employers from LMIA if your primary language is French and you work outside Quebec.\n"
-                "VisaJob AI automatically prioritizes fglo=1 verified vacancies directly in your discovery queue."
-            )
-
-        if any(w in prompt_lower for w in ["germany", "ألمانيا", "allemagne", "chancenkarte", "blue card"]):
-            return (
-                "🇩🇪 **Germany Employment & Chancenkarte (Opportunity Card):**\n\n"
-                "1. **Chancenkarte:** Points-based search visa (need 6 points: degree, German A1/A2 or English B2, under 35 years old).\n"
-                "2. **EU Blue Card Germany:** Fast-track work permit with minimum gross salary threshold (~45,300€ or ~41,041€ for STEM shortages in 2024).\n"
-                "3. **Skilled Immigration Act:** Allows direct hiring if foreign vocational or academic qualifications are recognized (Anerkennung)."
-            )
-
-        if any(w in prompt_lower for w in ["france", "فرنسا", "talent", "passeport"]):
-            return (
-                "🇫🇷 **France Employment & Talent Passport:**\n\n"
-                "1. **Passeport Talent (Salarié Qualifié):** For master's degree holders or engineers earning at least 2x the minimum wage (SMIC).\n"
-                "2. **Métiers en Tension:** Direct work permit exemption for shortage professions (IT, construction, logistics, healthcare).\n"
-                "3. **Introduction de Main-d'œuvre Étrangère:** Employer requests approval from DREETS before visa issuance."
-            )
-
-        if any(w in prompt_lower for w in ["ats", "cv", "resume", "سيرة"]):
-            return (
-                "📄 **How to Optimize your CV for International ATS Systems:**\n\n"
-                "1. **Chronological Structure:** Clear section headers (Summary, Work Experience, Technical Skills, Education).\n"
-                "2. **Action + Metric Formula:** Use strong action verbs + quantifiable results (e.g. 'Reduced downtime by 24% using PLC diagnostics').\n"
-                "3. **Language Matching:** Keep an English CV for Canada, Germany, Gulf; a French CV for France, Belgium, Quebec.\n"
-                "4. **No Graphic Tables/Columns:** Standard single-column text PDF prevents parsing errors in corporate ATS."
-            )
-
-        return (
-            f"🤖 **VisaJob AI Employment Consultant:**\n\n"
-            f"I am ready to assist your international job search. You can ask me to:\n"
-            f"• Analyze an employment contract or offer letter for scam indicators\n"
-            f"• Review your CV and score its ATS compatibility\n"
-            f"• Explain visa sponsorship requirements for Canada, Germany, France, or Gulf countries\n"
-            f"• Draft or refine targeted cover letters\n\n"
-            f"Regarding your inquiry: '{prompt}' — our coordinated agents are active 24/7 scanning verified opportunities for your profile."
+        # Detect language: Arabic, French, or English
+        has_arabic = bool(re.search(r'[؀-ۿ]', prompt_clean))
+        has_french = not has_arabic and (
+            (language and language.lower().startswith('fr')) or
+            any(w in prompt_lower for w in ["bonjour", "salut", "comment", "emploi", "travail", "lettre", "poste", "france", "québec", "allemagne", "merci", "aide"])
         )
+        is_ar = has_arabic or (language and language.lower().startswith('ar'))
+        is_fr = has_french
 
+        # 1. Document analysis requested (Contract, CV ATS, Offer Letter)
+        if doc_snippet:
+            if doc_type == "contract" or any(w in prompt_lower for w in ["contract", "عقد", "contrat"]):
+                analysis = LocalIntelligentEngine.analyze_contract(doc_snippet)
+                flags = analysis.get('red_flags', [])
+                if is_ar:
+                    flags_str = "\n".join(f"  ⚠️ {rf}" for rf in flags) if flags else "  ✅ لم يتم رصد أي بنود دفع مسبق أو مصادرة غير قانونية."
+                    status_text = "آمن ومطابق للشروط العامة" if analysis['risk_rating'] == "SAFE" else "عالي الخطورة (يوجد شبهة احتيال)"
+                    return (
+                        f"📋 **تقرير الفحص القانوني للعقد الوظيفي**\n\n"
+                        f"• **مستوى الأمان والمخاطر:** {status_text}\n"
+                        f"• **الراتب والتعويضات:** {analysis.get('compensation', 'غير محدد بدقة')}\n"
+                        f"• **بند رعاية التأشيرة (Visa Sponsorship):** {analysis.get('sponsorship_status', 'لا يوجد التزام صريح')}\n"
+                        f"• **الملاحظات والبنود المشبوهة:** {len(flags)}\n"
+                        f"{flags_str}\n\n"
+                        f"💡 **توصية VisaJob AI:**\n"
+                        f"{'يُنصح بالتثبت من رقم التسجيل التجاري للشركة لدى الجهات الرسمية قبل التوقيع.' if analysis['risk_rating'] == 'SAFE' else '⚠️ تحذير: لا تدفع أي مبالغ مالية مسبقة مقابل التأشيرة أو فحص العقد نهائياً!'}"
+                    )
+                elif is_fr:
+                    flags_str = "\n".join(f"  ⚠️ {rf}" for rf in flags) if flags else "  ✅ Aucune clause de paiement préalable ou confiscation détectée."
+                    return (
+                        f"📋 **Rapport d'analyse du contrat de travail**\n\n"
+                        f"• **Niveau de risque :** {analysis['risk_rating']}\n"
+                        f"• **Rémunération identifiée :** {analysis.get('compensation', 'Non spécifiée')}\n"
+                        f"• **Clause de parrainage de visa :** {analysis.get('sponsorship_status', 'Non mentionnée')}\n"
+                        f"• **Indicateurs suspects détectés :** {len(flags)}\n"
+                        f"{flags_str}\n\n"
+                        f"💡 **Recommandation :** {analysis.get('recommendation')}"
+                    )
+                else:
+                    flags_str = "\n".join(f"  ⚠️ {rf}" for rf in flags) if flags else "  ✅ No illegal payment or withholding clauses detected."
+                    return (
+                        f"📋 **Contract Analysis Report**\n\n"
+                        f"• **Risk Rating:** {analysis['risk_rating']}\n"
+                        f"• **Compensation Identified:** {analysis.get('compensation', 'Not explicitly stated')}\n"
+                        f"• **Visa Sponsorship Clause:** {analysis.get('sponsorship_status', 'No explicit commitment')}\n"
+                        f"• **Red Flags Detected:** {len(flags)}\n"
+                        f"{flags_str}\n\n"
+                        f"💡 **Legal Recommendation:** {analysis.get('recommendation')}"
+                    )
+
+            if doc_type == "cv" or any(w in prompt_lower for w in ["ats", "cv", "resume", "سيرة"]):
+                ats = LocalIntelligentEngine.analyze_cv_ats(doc_snippet)
+                if is_ar:
+                    skills_str = ", ".join(ats['detected_skills'][:10]) or "مهارات عامة"
+                    missing_str = ", ".join(ats['missing_keywords'][:6]) or "لا توجد نواقص جوهرية"
+                    return (
+                        f"🎯 **تقرير تدقيق السيرة الذاتية (ATS Audit)**\n\n"
+                        f"• **نسبة التوافق مع أنظمة الفرز الآلي:** {ats['ats_score']}/100\n"
+                        f"• **المجال المهني المكتشف:** {ats['sector']}\n"
+                        f"• **المهارات والكلمات المفتاحية المرصودة:** {skills_str}\n"
+                        f"• **كلمات مفتاحية مقترحة للرفع من حظوظك:** {missing_str}\n\n"
+                        f"🚀 **إرشادات عملية لتحسين سيرتك الذاتية:**\n"
+                        f"  1. اعتمد صيغة عمود واحد قياسية بصيغة PDF وتجنب الجداول المعقدة.\n"
+                        f"  2. اكتب إنجازاتك مدعومة بأرقام ونسب مئوية قابلة للقياس.\n"
+                        f"  3. اجعل المسمى الوظيفي مطابقاً للمعايير الدولية المتعارف عليها في كندا وأوروبا."
+                    )
+                else:
+                    recs_str = "\n".join(f"  • {rec}" for rec in ats['recommendations'])
+                    return (
+                        f"🎯 **ATS Compatibility & CV Evaluation**\n\n"
+                        f"• **ATS Score:** {ats['ats_score']}/100\n"
+                        f"• **Identified Sector:** {ats['sector']}\n"
+                        f"• **Primary Skills Detected:** {', '.join(ats['detected_skills'][:10])}\n"
+                        f"• **Missing Recommended Keywords:** {', '.join(ats['missing_keywords'][:6])}\n\n"
+                        f"🚀 **Actionable Recommendations:**\n"
+                        f"{recs_str}"
+                    )
+
+        # 2. Free-form & Immigration Inquiries (Dynamic Multilingual Logic)
+        if is_ar:
+            # Arabic Answers
+            if any(w in prompt_lower for w in ["كندا", "canada", "lmia", "كيبيك", "أريما"]):
+                return (
+                    "🇨🇦 **دليل الهجرة والعمل في كندا عبر VisaJob AI:**\n\n"
+                    "1. **بوابة Job Bank Canada (الفرز للمرشحين الأجانب):**\n"
+                    "   يقوم نظامنا بفرز العروض المؤشر عليها برمز `fglo=1`، وهي الوظائف التي يمتلك أصحابها ترخيص توظيف عمالة من خارج كندا عبر موافقة تقييم الأثر على سوق العمل (LMIA).\n\n"
+                    "2. **برنامج التنقل الفرانكوفوني (Mobilité Francophone):**\n"
+                    "   إذا كنت تتقن اللغة الفرنسية (مستوى B2 أو ما يعادل CLB 7)، يحق لأي صاحب عمل كندي خارج مقاطعة كيبيك توظيفك مباشرة بإعفاء كامل من شرط LMIA المعقد!\n\n"
+                    "3. **نظام الدخول السريع (Express Entry):**\n"
+                    "   يتطلب تقييم الشهادات (ECA مثل WES) واختبار لغة (IELTS General أو TEF Canada). الحصول على عقد عمل كندي موثق يمنحك بين 50 إلى 200 نقطة إضافية تضمن قبولك فوراً.\n\n"
+                    "💡 *نصيحة المنظومة:* احرص على تفعيل نسختك الفرنسية أو الإنجليزية من السيرة الذاتية داخل تبويب CV Vault ليقوم الوكلاء بتقديم طلبك تلقائياً."
+                )
+
+            if any(w in prompt_lower for w in ["ألمانيا", "germany", "بطاقة الفرصة", "chancenkarte", "بلو كارد", "blue card"]):
+                return (
+                    "🇩🇪 **مسارات العمل والإقامة في ألمانيا:**\n\n"
+                    "1. **بطاقة الفرصة الألمانية (Chancenkarte):**\n"
+                    "   تأشيرة قائمة على نظام النقاط تسمح لك بدخول ألمانيا لمدة سنة للبحث عن عمل. المتطلبات: مؤهل جامعي أو مهني معترف به، وإتقان الألمانية (مستوى A1) أو الإنجليزية (مستوى B2)، وعمرك أقل من 35 سنة للظفر بأقصى النقاط.\n\n"
+                    "2. **البطاقة الزرقاء الأوروبية (EU Blue Card):**\n"
+                    "   أسرع طريق للإقامة الدائمة. تتطلب عقداً وظيفياً براتب إجمالي سنوي لا يقل عن 41,041 يورو للمهن التي تشهد نقصاً حاداً (الهندسة، تكنولوجيا المعلومات، التمريض والطب).\n\n"
+                    "3. **معادلة الشهادات (Anerkennung):**\n"
+                    "   يجب التأكد من إدراج جامعتك وتخصصك في قاعدة بيانات Anabin الألمانية لضمان اعتماد ملفك لدى السفارة."
+                )
+
+            if any(w in prompt_lower for w in ["فرنسا", "france", "passeport talent", "جواز موهبة", "باريس"]):
+                return (
+                    "🇫🇷 **فرص العمل وتأشيرات الكفاءات في فرنسا:**\n\n"
+                    "1. **تأشيرة جواز سفر الكفاءات (Passeport Talent):**\n"
+                    "   مخصصة للمهندسين وحملة الماجستير والكوادر العليا، وتمنحك إقامة قابلة للتجديد لـ 4 سنوات مع استقدام فوري للأسرة ودون الحاجة لفحص سوق العمل المحلي إذا كان الراتب يفوق ضعف الحد الأدنى (SMIC).\n\n"
+                    "2. **قائمة المهن التي تشهد نقصاً (Métiers en Tension):**\n"
+                    "   تشمل قطاعات تكنولوجيا المعلومات، البناء والأشغال العامة، اللوجستيك، والميكانيك. يتم إصدار تصريح العمل عبر منصة DREETS الرقمية في غضون أسابيع قليلة.\n\n"
+                    "💡 *نصيحة:* تأكد من كتابة سيرتك الذاتية وخطاب التقديم باللغة الفرنسية السليمة، ويمكن لوكيلنا الآلي توليدها لك بضغطة زر."
+                )
+
+            if any(w in prompt_lower for w in ["الخليج", "السعودية", "الإمارات", "قطر", "قوى", "دبي"]):
+                return (
+                    "🇸🇦🇦🇪 **فرص العمل والانتقال لدول الخليج العربي:**\n\n"
+                    "1. **المملكة العربية السعودية (منصة قوى):**\n"
+                    "   يتم توثيق كافة عقود العمل وتأشيرات الكفاءات رقمياً عبر منصة 'قوى'. يشهد السوق طلباً متزايداً على مهندسي الذكاء الاصطناعي، مديري المشاريع، والمختصين الفنيين ضمن مشاريع رؤية 2030.\n\n"
+                    "2. **الإمارات العربية المتحدة:**\n"
+                    "   تأشيرة استكشاف فرص العمل والإقامة الخضراء للعمل الحر أو التوظيف المباشر في دبي وأبوظبي بدون اشتراط كفيل محلي للكفاءات المتخصصة.\n\n"
+                    "3. **قطر وسلطنة عمان:**\n"
+                    "   استقطاب مباشر للكوادر الطبية والهندسية والتعليمية مع سكن وتأمين صحي شامل وتغطية كاملة لتذاكر الطيران والإقامة."
+                )
+
+            if any(w in prompt_lower for w in ["سيرة", "cv", "resume", "ats", "كيف أكتب", "تعديل"]):
+                return (
+                    "📄 **كيف تصنع سيرة ذاتية دولية تتفوق على أنظمة الفرز الآلي (ATS)؟**\n\n"
+                    "1. **تنسيق نصي نظيف:** ابتعد عن التصاميم ذات الأعمدة المزدوجة أو الصور أو الجداول المعقدة؛ أنظمة ATS الشركات العالمية تقرأ النصوص المتسلسلة (Single-column layout).\n"
+                    "2. **معادلة الإنجازات (Action + Number):** بدلاً من ذكر المهام فقط، اذكر النتائج الملموسة. مثال: *'قمت بتطوير نظام التوزيع مما خفض زمن التوقف بنسبة 22%'*.\n"
+                    "3. **مطابقة الكلمات المفتاحية:** تفحص إعلان الوظيفة واستخدم نفس المصطلحات التقنية المذكورة فيه.\n"
+                    "4. **اللغة المستهدفة:** احرص على استخدام السيرة الذاتية باللغة الإنجليزية لكندا وألمانيا والخليج، واللغة الفرنسية لفرنسا وكيبيك وبلجيكا."
+                )
+
+            # Contextual Arabic reply for other queries
+            return (
+                f"مرحباً بك! أنا مستشارك الذكي للتوظيف والهجرة الدولية في منصة **VisaJob AI**.\n\n"
+                f"بخصوص استفسارك: *'{prompt_clean}'*، يسعدني تقديم المساعدة المتخصصة في أي من المجالات التالية:\n"
+                f"• 🌐 **استكشاف فرص العمل الدولية:** استعراض الوظائف التي تدعم كفالة التأشيرات (Canada LMIA, EURES, EU Blue Card).\n"
+                f"• 📋 **فحص العقود وعروض العمل:** كشف محاولات النصب ورصد رسوم المعالجة الاحتيالية وبنود مصادرة الجوازات.\n"
+                f"• 🎯 **تحسين السيرة الذاتية (ATS):** تحليل التوافق وإضافة الكلمات المفتاحية الأكثر طلباً لدى أصحاب العمل.\n"
+                f"• ✍️ **صياغة رسائل التقديم المخصصة:** توليد خطابات احترافية باللغات العربية والفرنسية والإنجليزية.\n\n"
+                f"أخبرني بما تحتاجه بالتحديد أو ارفع مستندك وسأقوم بتدقيقه لك فوراً!"
+            )
+
+        elif is_fr:
+            # French Answers
+            if any(w in prompt_lower for w in ["canada", "québec", "lmia"]):
+                return (
+                    "🇨🇦 **Immigration & Emploi au Canada avec VisaJob AI :**\n\n"
+                    "1. **Guichet Emplois (Job Bank fglo=1) :** Filtrage des offres validées avec dispense ou acceptation d'EIMT (Étude d'Impact sur le Marché du Travail) pour les candidats internationaux.\n"
+                    "2. **Mobilité Francophone :** Exemption directe d'EIMT pour tout emploi qualifié hors Québec si vous maîtrisez le français !\n"
+                    "3. **Entrée Express :** Obtention de points cruciaux grâce à une offre d'emploi vérifiée."
+                )
+            return (
+                f"Bonjour ! Je suis votre conseiller en emploi international et immigration au sein de **VisaJob AI**.\n\n"
+                f"Concernant votre demande : *'{prompt_clean}'*, je peux vous aider à :\n"
+                f"• Analyser vos contrats de travail et déceler les clauses frauduleuses ou frais suspects.\n"
+                f"• Optimiser votre CV pour les filtres ATS des recruteurs internationaux.\n"
+                f"• Vous orienter sur les démarches de visa pour le Canada, la France ou l'Allemagne.\n"
+                f"N'hésitez pas à me poser une question précise ou à déposer un document pour analyse."
+            )
+        else:
+            # English Answers
+            if any(w in prompt_lower for w in ["canada", "lmia", "express entry"]):
+                return (
+                    "🇨🇦 **Canada Immigration & Employment Pathways:**\n\n"
+                    "1. **Job Bank Canada (fglo=1):** Employers verified to recruit foreign workers under LMIA-approved streams.\n"
+                    "2. **Express Entry (Federal Skilled Worker):** Language proficiency (CLB 7+) and ECA credential verification. A valid job offer awards 50 to 200 CRS points.\n"
+                    "3. **Mobilité Francophone:** Exempts Canadian employers outside Quebec from LMIA requirements if your primary language is French.\n"
+                    "VisaJob AI automatically scans and highlights these opportunities directly in your Jobs Center."
+                )
+            if any(w in prompt_lower for w in ["germany", "chancenkarte", "blue card"]):
+                return (
+                    "🇩🇪 **Germany Employment & Opportunity Card (Chancenkarte):**\n\n"
+                    "1. **Chancenkarte:** Points-based job search visa (minimum 6 points required: degree, German A1/A2 or English B2, under 35 years old).\n"
+                    "2. **EU Blue Card Germany:** Fast-track work permit with lower gross salary thresholds for shortage professions (~41,041€/year in STEM, IT, Healthcare).\n"
+                    "3. **Anabin Verification:** Ensure your university degree is recognized (Status H+) before visa appointment."
+                )
+            return (
+                f"Hello! I am your AI Immigration & Employment Consultant at **VisaJob AI**.\n\n"
+                f"Regarding your query: *'{prompt_clean}'*, I am equipped to assist you with:\n"
+                f"• **Contract Scam Audits:** Identifying advance-fee fraud, fake recruiter domains, and illegal passport withholding.\n"
+                f"• **ATS CV Optimization:** Keyword matching and formatting for multinational applicant tracking systems.\n"
+                f"• **Visa Pathways:** Sponsorship requirements for Canada (LMIA), Germany (Chancenkarte/Blue Card), France, and Gulf countries.\n"
+                f"• **Targeted Cover Letters:** Generating customized professional letters tailored to each opening."
+            )
     @staticmethod
     def analyze_contract(contract_text: str) -> dict[str, Any]:
         text_lower = contract_text.lower()

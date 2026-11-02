@@ -200,27 +200,33 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     );
   }
 
-  // Verification Dialog
+  // Verification Dialog (100% Localized & Resend Supported)
   void _showVerificationDialog(String email, {String? initialCode}) {
+    final isAr = LanguageController.instance.isRtl;
     final codeController = TextEditingController(text: initialCode ?? '');
     bool verifying = false;
+    bool resending = false;
     String? verifError;
+    String? resendSuccess;
 
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppTheme.surface,
+          backgroundColor: AppTheme.card,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
             side: const BorderSide(color: AppTheme.border),
           ),
           title: Row(
-            children: const [
-              Icon(Icons.mark_email_read_outlined, color: AppTheme.primary, size: 24),
-              SizedBox(width: 10),
-              Text('Verify Email', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            children: [
+              const Icon(Icons.mark_email_read_outlined, color: AppTheme.primary, size: 24),
+              const SizedBox(width: 10),
+              Text(
+                isAr ? 'تأكيد البريد الإلكتروني' : 'Verify Email',
+                style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold),
+              ),
             ],
           ),
           content: Column(
@@ -228,24 +234,95 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'A 6-digit verification code has been generated for $email.',
-                style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
+                isAr
+                    ? 'تم إرسال رمز تحقق مكوّن من 6 أرقام إلى بريدك: $email'
+                    : 'A 6-digit verification code has been dispatched to $email.',
+                style: const TextStyle(fontSize: 12.5, color: AppTheme.textMuted),
               ),
-              const SizedBox(height: 16),
+              if (initialCode != null && initialCode.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppTheme.secondary.withValues(alpha: 0.4)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.key_rounded, color: AppTheme.secondary, size: 16),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          isAr ? 'رمز التحقق المعتمد: $initialCode' : 'Verification code: $initialCode',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.secondary),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 14),
               TextField(
                 controller: codeController,
                 keyboardType: TextInputType.number,
                 maxLength: 6,
                 style: const TextStyle(letterSpacing: 4, fontSize: 18, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: '000000',
                   counterText: '',
-                  prefixIcon: Icon(Icons.pin_outlined),
+                  prefixIcon: const Icon(Icons.pin_outlined),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 ),
               ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton.icon(
+                    onPressed: resending
+                        ? null
+                        : () async {
+                            setDialogState(() {
+                              resending = true;
+                              verifError = null;
+                              resendSuccess = null;
+                            });
+                            try {
+                              final res = await ApiService.resendVerification();
+                              final devCode = res['dev_verification_code'] as String?;
+                              setDialogState(() {
+                                resending = false;
+                                if (devCode != null) {
+                                  codeController.text = devCode;
+                                }
+                                resendSuccess = isAr ? 'تم إعادة إرسال الرمز بنجاح!' : 'Code resent successfully!';
+                              });
+                            } catch (e) {
+                              setDialogState(() {
+                                resending = false;
+                                verifError = e.toString().replaceAll('Exception: ', '');
+                              });
+                            }
+                          },
+                    icon: resending
+                        ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 1.5))
+                        : const Icon(Icons.refresh_rounded, size: 14),
+                    label: Text(
+                      isAr ? 'إعادة إرسال الرمز' : 'Resend Code',
+                      style: const TextStyle(fontSize: 11, color: AppTheme.secondary),
+                    ),
+                  ),
+                  if (resendSuccess != null)
+                    Text(
+                      resendSuccess!,
+                      style: const TextStyle(fontSize: 11, color: AppTheme.secondary, fontWeight: FontWeight.bold),
+                    ),
+                ],
+              ),
               if (verifError != null) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(verifError!, style: const TextStyle(color: AppTheme.danger, fontSize: 12)),
               ],
             ],
@@ -256,7 +333,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                 Navigator.of(ctx).pop();
                 _navigateToMain();
               },
-              child: const Text('Skip for now', style: TextStyle(color: AppTheme.textMuted)),
+              child: Text(isAr ? 'تخطي الآن' : 'Skip for now', style: const TextStyle(color: AppTheme.textMuted)),
             ),
             ElevatedButton(
               onPressed: verifying
@@ -264,7 +341,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                   : () async {
                       final code = codeController.text.trim();
                       if (code.length != 6) {
-                        setDialogState(() => verifError = 'Enter 6-digit code');
+                        setDialogState(() => verifError = isAr ? 'الرجاء إدخال رمز مكون من 6 أرقام' : 'Enter 6-digit code');
                         return;
                       }
                       setDialogState(() {
@@ -284,9 +361,10 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                         });
                       }
                     },
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
               child: verifying
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('Verify Account'),
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : Text(isAr ? 'تأكيد الحساب' : 'Verify Account'),
             ),
           ],
         ),

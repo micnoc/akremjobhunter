@@ -87,6 +87,10 @@ def get(key: str, user_id: int | None = None) -> Any:
             if key in USER_ISOLATED_KEYS:
                 return DEFAULTS.get(key)
 
+        # Strict Isolation: User-isolated keys must never read global settings
+        if key in USER_ISOLATED_KEYS:
+            return DEFAULTS.get(key)
+
         row = s.get(SettingRow, key)
         if row is None:
             return DEFAULTS.get(key)

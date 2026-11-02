@@ -96,7 +96,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         _attachedFilePath = null;
         _attachedFileName = null;
       } else {
-        reply = await ApiService.sendChatMessage(text);
+        reply = await ApiService.sendChatMessage(
+          text,
+          language: LanguageController.instance.currentLocale.languageCode,
+        );
       }
 
       if (mounted) {

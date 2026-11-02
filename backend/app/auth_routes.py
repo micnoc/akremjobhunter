@@ -142,7 +142,9 @@ def register(body: RegisterIn, request: Request, db: Session = Depends(get_db)) 
     db.refresh(user)
 
     if body.full_name and body.full_name.strip():
-        store.put("full_name", body.full_name.strip())
+        store.put("full_name", body.full_name.strip(), user_id=user.id)
+    if body.phone and body.phone.strip():
+        store.put("phone", body.phone.strip(), user_id=user.id)
 
     # Try sending email verification if mailer is configured
     email_sent = False
@@ -255,7 +257,7 @@ def update_profile(
 
     if body.full_name is not None:
         user.full_name = body.full_name.strip()
-        store.put("full_name", user.full_name)
+        store.put("full_name", user.full_name, user_id=user.id)
     if body.country_code is not None:
         user.country_code = body.country_code.strip().upper()
     if body.phone is not None:

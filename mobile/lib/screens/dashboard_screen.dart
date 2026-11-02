@@ -1,3 +1,4 @@
+import 'jobs_explorer_screen.dart';
 import '../l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import '../models/models.dart';
@@ -154,6 +155,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             // 2. Application Pipeline Visualizer (Stage Flow)
             _buildPipelineFlowCard(counts),
+            const SizedBox(height: 16),
+
+            // Explore Analyzed Jobs Banner
+            _buildExploreJobsBanner(counts['jobs_7d'] ?? 0),
             const SizedBox(height: 16),
 
             // 3. Sources Center (Job Bank Canada, EURES, CareerJet, Jooble, Company Portals)
@@ -339,49 +344,79 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildMetricGrid(Map<String, dynamic> c) {
+    final isAr = LanguageController.instance.isRtl;
     return GridView.count(
       crossAxisCount: 2,
       crossAxisSpacing: 10,
       mainAxisSpacing: 10,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.7,
+      childAspectRatio: 1.6,
       children: [
-        _buildStatCard('JOBS ANALYSED (7D)', '${c['jobs_7d'] ?? 0}', 'International Scrapers', AppTheme.primary),
-        _buildStatCard('ELIGIBLE MATCHES', '${c['eligible_7d'] ?? 0}', 'LMIA / Visa / Open', AppTheme.accent),
-        _buildStatCard('APPLICATIONS SUBMITTED', '${c['submitted'] ?? 0}', 'Zero-Duplicate Archive', AppTheme.textMuted),
-        _buildStatCard('INTERVIEWS / OFFERS', '${(c['interviews'] ?? 0) + (c['offers'] ?? 0)}', 'Verified Responses', AppTheme.secondary),
+        _buildStatCard(
+          isAr ? 'عروض تم فحصها (7 أيام)' : 'JOBS ANALYSED (7D)',
+          '${c['jobs_7d'] ?? 0}',
+          isAr ? 'اضغط للاستعراض والتقديم ↗' : 'Tap to Browse & Apply ↗',
+          AppTheme.primary,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const JobsExplorerScreen())),
+        ),
+        _buildStatCard(
+          isAr ? 'فرص تدعم التأشيرة وLMIA' : 'ELIGIBLE MATCHES',
+          '${c['eligible_7d'] ?? 0}',
+          isAr ? 'تأشيرة مفتوحة / كفالة معتمدة ↗' : 'LMIA / Visa / Open ↗',
+          AppTheme.accent,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const JobsExplorerScreen())),
+        ),
+        _buildStatCard(
+          isAr ? 'ترشحات مرسلة وموثقة' : 'APPLICATIONS SUBMITTED',
+          '${c['submitted'] ?? 0}',
+          isAr ? 'أرشيف تقديمات بدون تكرار' : 'Zero-Duplicate Archive',
+          AppTheme.textMuted,
+          onTap: () => widget.onNavigateTab(1),
+        ),
+        _buildStatCard(
+          isAr ? 'مقابلات وعروض قبول' : 'INTERVIEWS / OFFERS',
+          '${(c['interviews'] ?? 0) + (c['offers'] ?? 0)}',
+          isAr ? 'ردود إيجابية مؤكدة' : 'Verified Responses',
+          AppTheme.secondary,
+          onTap: () => widget.onNavigateTab(1),
+        ),
       ],
     );
   }
 
-  Widget _buildStatCard(String title, String val, String sub, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppTheme.card,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppTheme.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
-          Text(val, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
-          Text(sub, style: const TextStyle(fontSize: 10, color: AppTheme.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
-        ],
+  Widget _buildStatCard(String title, String val, String sub, Color color, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppTheme.card,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: onTap != null ? AppTheme.primary.withValues(alpha: 0.35) : AppTheme.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(title, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+            Text(val, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
+            Text(sub, style: const TextStyle(fontSize: 10, color: AppTheme.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildEngineControls(bool paused) {
+    final isAr = LanguageController.instance.isRtl;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'MANUAL ENGINE CONTROLS',
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 1.1),
+        Text(
+          isAr ? 'التحكم اليدوي في وتيرة المنظومة' : 'MANUAL ENGINE CONTROLS',
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted, letterSpacing: 0.8),
         ),
         const SizedBox(height: 8),
         Row(
@@ -390,7 +425,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: OutlinedButton.icon(
                 onPressed: () => _trigger('discover'),
                 icon: const Icon(Icons.travel_explore, size: 16),
-                label: const Text('Scan Jobs', style: TextStyle(fontSize: 12)),
+                label: Text(isAr ? 'فحص الوظائف' : 'Scan Jobs', style: const TextStyle(fontSize: 12)),
               ),
             ),
             const SizedBox(width: 8),
@@ -398,14 +433,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: OutlinedButton.icon(
                 onPressed: () => _trigger('inbox'),
                 icon: const Icon(Icons.mark_email_read, size: 16),
-                label: const Text('Scan Inbox', style: TextStyle(fontSize: 12)),
+                label: Text(isAr ? 'فحص الوارد' : 'Scan Inbox', style: const TextStyle(fontSize: 12)),
               ),
             ),
             const SizedBox(width: 8),
             IconButton.outlined(
               onPressed: () => _trigger(paused ? 'resume' : 'pause'),
               icon: Icon(paused ? Icons.play_arrow : Icons.pause, color: paused ? AppTheme.secondary : AppTheme.warning),
-              tooltip: paused ? 'Resume 24/7 Engine' : 'Pause 24/7 Engine',
+              tooltip: paused ? (isAr ? 'استئناف المحرك' : 'Resume 24/7 Engine') : (isAr ? 'إيقاف مؤقت' : 'Pause 24/7 Engine'),
             ),
           ],
         ),
@@ -485,13 +520,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
   Widget _buildMultiAgentCard() {
+    final isAr = LanguageController.instance.isRtl;
     final agents = [
-      {'name': 'Job Agent', 'role': 'Canada, EURES, Indeed & Jooble', 'icon': Icons.radar_rounded, 'color': const Color(0xFF3B82F6)},
-      {'name': 'CV Agent', 'role': 'Auto-Select CV & ATS Optimizer', 'icon': Icons.description_rounded, 'color': const Color(0xFF10B981)},
-      {'name': 'Cover Letter Agent', 'role': 'FR/EN/AR Tailored Letters', 'icon': Icons.history_edu_rounded, 'color': const Color(0xFF8B5CF6)},
-      {'name': 'Immigration Agent', 'role': 'LMIA & Visa Compatibility', 'icon': Icons.card_membership_rounded, 'color': const Color(0xFFF59E0B)},
-      {'name': 'Email Agent', 'role': '24/7 IMAP, Scam & Offer Triage', 'icon': Icons.mail_lock_rounded, 'color': const Color(0xFFEC4899)},
-      {'name': 'Opportunity Agent', 'role': 'Scam Defense & Score Prioritizer', 'icon': Icons.verified_user_rounded, 'color': const Color(0xFF06B6D4)},
+      {'agent_key': 'JobAgent', 'name': 'Job Agent', 'name_ar': 'وكيل رصد الوظائف', 'role': 'Canada, EURES & Portals', 'role_ar': 'رصد كندا وأوروبا وكبرى الشركات', 'icon': Icons.radar_rounded, 'color': const Color(0xFF3B82F6)},
+      {'agent_key': 'CvAgent', 'name': 'CV Agent', 'name_ar': 'وكيل السيرة الذاتية', 'role': 'ATS Optimizer & CV Matcher', 'role_ar': 'مطابقة التخصص وتحسين الـ ATS', 'icon': Icons.description_rounded, 'color': const Color(0xFF10B981)},
+      {'agent_key': 'CoverLetterAgent', 'name': 'Cover Letter Agent', 'name_ar': 'وكيل خطابات التقديم', 'role': 'Tailored Regional Letters', 'role_ar': 'صياغة رسائل موجهة بالعربية والفرنسية', 'icon': Icons.history_edu_rounded, 'color': const Color(0xFF8B5CF6)},
+      {'agent_key': 'ImmigrationAgent', 'name': 'Immigration Agent', 'name_ar': 'وكيل الهجرة والتأشيرات', 'role': 'LMIA & Visa Compatibility', 'role_ar': 'فحص كفالة LMIA وبطاقة الفرصة', 'icon': Icons.card_membership_rounded, 'color': const Color(0xFFF59E0B)},
+      {'agent_key': 'EmailAgent', 'name': 'Email Agent', 'name_ar': 'وكيل البريد والإشعارات', 'role': 'Inbox Triage & Scam Defense', 'role_ar': 'فرز الردود وكشف رسائل الاحتيال', 'icon': Icons.mail_lock_rounded, 'color': const Color(0xFFEC4899)},
+      {'agent_key': 'OpportunityAgent', 'name': 'Opportunity Agent', 'name_ar': 'وكيل تقييم الفرص', 'role': 'Probability & Queue Priority', 'role_ar': 'تحديد الأولويات وحساب احتمالية القبول', 'icon': Icons.verified_user_rounded, 'color': const Color(0xFF06B6D4)},
     ];
 
     return Container(
@@ -526,19 +562,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'AUTONOMOUS MULTI-AGENT NETWORK',
-                      style: TextStyle(
+                    Text(
+                      isAr ? 'شبكة الوكلاء الذكية المستقلة' : 'AUTONOMOUS MULTI-AGENT NETWORK',
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 1.1,
+                        letterSpacing: 0.8,
                         color: AppTheme.primary,
                       ),
                     ),
                     Text(
-                      '6 Coordinated AI Agents Active 24/7',
-                      style: TextStyle(
-                        fontSize: 11,
+                      isAr ? '6 عملاء ذكاء اصطناعي يعملون 24/7 (اضغط للتشغيل المباشر)' : '6 Coordinated AI Agents Active 24/7 (Tap to run)',
+                      style: const TextStyle(
+                        fontSize: 10.5,
                         color: AppTheme.textMuted,
                       ),
                     ),
@@ -552,14 +588,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: const Color(0xFF10B981)),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.fiber_manual_record, color: Color(0xFF10B981), size: 10),
-                    SizedBox(width: 4),
+                    const Icon(Icons.fiber_manual_record, color: Color(0xFF10B981), size: 10),
+                    const SizedBox(width: 4),
                     Text(
-                      'LIVE',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                      isAr ? 'نشط' : 'LIVE',
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
                     ),
                   ],
                 ),
@@ -574,7 +610,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 2.6,
+              childAspectRatio: 2.5,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
             ),
@@ -582,38 +618,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
             itemBuilder: (context, i) {
               final a = agents[i];
               final c = a['color'] as Color;
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppTheme.surface.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppTheme.border.withValues(alpha: 0.6)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(a['icon'] as IconData, size: 20, color: c),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            a['name'] as String,
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            a['role'] as String,
-                            style: const TextStyle(fontSize: 9.5, color: AppTheme.textMuted),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+              return InkWell(
+                onTap: () => _showAgentSheet(a),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surface.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppTheme.border.withValues(alpha: 0.6)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(a['icon'] as IconData, size: 20, color: c),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              isAr ? (a['name_ar'] as String) : (a['name'] as String),
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              isAr ? (a['role_ar'] as String) : (a['role'] as String),
+                              style: const TextStyle(fontSize: 9.5, color: AppTheme.textMuted),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },
@@ -925,6 +965,210 @@ class _DashboardScreenState extends State<DashboardScreen> {
             }).toList(),
           ),
         ],
+      ),
+    );
+  }
+
+
+  Widget _buildExploreJobsBanner(int count) {
+    final isAr = LanguageController.instance.isRtl;
+    return InkWell(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const JobsExplorerScreen())),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppTheme.primary.withValues(alpha: 0.25),
+              AppTheme.card,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.primary.withValues(alpha: 0.5)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.travel_explore_rounded, color: AppTheme.primary, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isAr ? 'استعراض الفرص الوظيفية المحللة ($count فرصة)' : 'Explore Analyzed Jobs ($count Available)',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isAr ? 'اضغط للاستعراض وفحص الأمان والتقديم المباشر' : 'Tap to browse, scam audit, and quick apply',
+                    style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppTheme.primary),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAgentSheet(Map<String, dynamic> agent) {
+    final isAr = LanguageController.instance.isRtl;
+    final agentKey = agent['agent_key'] as String? ?? 'JobAgent';
+    final name = isAr ? (agent['name_ar'] as String? ?? agent['name'] as String) : agent['name'] as String;
+    final role = isAr ? (agent['role_ar'] as String? ?? agent['role'] as String) : agent['role'] as String;
+    final color = agent['color'] as Color;
+    final icon = agent['icon'] as IconData;
+
+    bool running = false;
+    String? runResult;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(color: color.withValues(alpha: 0.15), shape: BoxShape.circle),
+                    child: Icon(icon, color: color, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text(role, style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF10B981)),
+                    ),
+                    child: Text(
+                      isAr ? 'نشط 24/7' : 'ACTIVE 24/7',
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.border),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isAr ? 'المهمة الحالية للوكيل:' : 'Current Agent Mission:',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primary),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      isAr
+                          ? 'مراقبة ومطابقة الوظائف وتحديث قواعد البيانات السحابية بصورة مستمرة دون توقف.'
+                          : 'Monitoring global job boards, evaluating ATS compatibility, and maintaining zero-duplicate application pipeline.',
+                      style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                    ),
+                  ],
+                ),
+              ),
+              if (runResult != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppTheme.secondary.withValues(alpha: 0.4)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle_rounded, color: AppTheme.secondary, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(runResult!, style: const TextStyle(fontSize: 11.5, color: AppTheme.secondary)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: running
+                      ? null
+                      : () async {
+                          setSheetState(() => running = true);
+                          try {
+                            final res = await ApiService.runAgentCycle(agentKey);
+                            setSheetState(() {
+                              running = false;
+                              runResult = res['result'] as String? ?? (isAr ? 'تم تنفيذ دورة الوكيل بنجاح.' : 'Cycle completed successfully.');
+                            });
+                          } catch (e) {
+                            setSheetState(() {
+                              running = false;
+                              runResult = 'Execution error: $e';
+                            });
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: running
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.play_arrow_rounded, size: 20),
+                  label: Text(
+                    running
+                        ? (isAr ? 'جاري تنفيذ دورة الوكيل...' : 'Running cycle...')
+                        : (isAr ? 'تشغيل دورة الوكيل فوراً' : 'Run Agent Cycle Now'),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
