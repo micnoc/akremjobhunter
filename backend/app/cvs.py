@@ -44,22 +44,37 @@ def store_cv(db: Session, original_name: str, content: bytes, user_id: int | Non
         raise CvError(f"{original_name}: no readable text (scanned image PDF). Export the CV as a text PDF.")
 
     cv = Cv(user_id=user_id, label=os.path.splitext(original_name)[0][:200], original_name=original_name, stored_name=stored, text=text)
+    prof = None
     try:
         prof = ai.extract_cv_profile(text)
-        cv.language = (prof.language or "en")[:5].lower()
-        cv.sector = prof.sector[:200]
-        cv.target_titles = json.dumps(prof.target_titles[:6], ensure_ascii=False)
-        cv.skills = json.dumps(prof.skills[:40], ensure_ascii=False)
-        cv.candidate_name = prof.candidate_name[:200]
-        if prof.sector:
-            cv.label = f"{prof.sector} ({cv.language.upper()})"[:200]
-        _fill_identity(prof)
-    except ai.AINotConfigured:
-        log.info("AI not configured; CV stored without profile")
     except Exception as exc:
-        log.warning("CV profiling failed: %s", exc)
+        log.info("Remote AI extraction skipped (%s), using LocalIntelligentEngine", exc)
+
+    if not prof:
+        from .local_ai import LocalIntelligentEngine
+        prof = LocalIntelligentEngine.extract_cv_profile(text)
+
+    cv.language = (prof.language or "en")[:5].lower()
+    cv.sector = (prof.sector or "General Services")[:200]
+    cv.target_titles = json.dumps(prof.target_titles[:6], ensure_ascii=False)
+    cv.skills = json.dumps(prof.skills[:40], ensure_ascii=False)
+    cv.candidate_name = (prof.candidate_name or "")[:200]
+    if prof.sector:
+        cv.label = f"{prof.sector} ({cv.language.upper()})"[:200]
+    _fill_identity(prof)
     db.add(cv)
     db.flush()
+
+    try:
+        from . import settings_store as store
+        from . import pipeline
+        if user_id:
+            store.put("search_keywords", prof.target_titles[:6], user_id=user_id)
+            countries = store.get("target_countries", user_id=user_id) or ["CA", "DE", "FR"]
+            pipeline.run_live_search(prof.target_titles[:3], countries[:3], limit_per_source=5)
+    except Exception as exc:
+        log.warning("Automatic search for CV failed: %s", exc)
+
     return cv
 
 
@@ -108,3 +123,28 @@ def to_dict(cv: Cv) -> dict:
         "uploaded_at": cv.uploaded_at.isoformat() if cv.uploaded_at else None,
         "chars": len(cv.text or ""),
     }
+
+
+def reprofile_existing_cvs(db: Session) -> int:
+    from .local_ai import LocalIntelligentEngine
+    cvs = db.scalars(select(Cv)).all()
+    count = 0
+    for c in cvs:
+        titles = []
+        try:
+            titles = json.loads(c.target_titles or "[]")
+        except Exception:
+            pass
+        if not titles or titles == ["Specialist"]:
+            prof = LocalIntelligentEngine.extract_cv_profile(c.text)
+            c.target_titles = json.dumps(prof.target_titles[:6], ensure_ascii=False)
+            c.skills = json.dumps(prof.skills[:40], ensure_ascii=False)
+            c.sector = (prof.sector or c.sector)[:200]
+            if prof.candidate_name and not c.candidate_name:
+                c.candidate_name = prof.candidate_name[:200]
+            if prof.sector:
+                c.label = f"{prof.sector} ({c.language.upper()})"[:200]
+            count += 1
+    if count:
+        db.commit()
+    return count

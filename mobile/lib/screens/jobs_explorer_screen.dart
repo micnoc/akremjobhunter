@@ -591,6 +591,20 @@ class _JobsExplorerScreenState extends State<JobsExplorerScreen> {
               ),
               const SizedBox(width: 8),
 
+              if ((job['url'] as String? ?? '').isNotEmpty) ...[
+                IconButton.outlined(
+                  onPressed: () async {
+                    final uri = Uri.parse(job['url']);
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    }
+                  },
+                  icon: const Icon(Icons.open_in_new_rounded, size: 18, color: AppTheme.secondary),
+                  tooltip: isAr ? 'رابط العرض الأصلي' : 'Open Official Source',
+                ),
+                const SizedBox(width: 8),
+              ],
+
               // Apply / Review Button
               Expanded(
                 child: ElevatedButton.icon(

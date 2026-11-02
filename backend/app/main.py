@@ -28,6 +28,16 @@ async def lifespan(app: FastAPI):
     log.info("Starting akremjobhunter cloud engine...")
     init_db()
 
+    try:
+        from .cvs import reprofile_existing_cvs
+        from .db import session_scope
+        with session_scope() as db:
+            reprofile_count = reprofile_existing_cvs(db)
+            if reprofile_count > 0:
+                log.info("Re-profiled %d existing CVs with active domain titles", reprofile_count)
+    except Exception as exc:
+        log.warning("Startup CV reprofiling warning: %s", exc)
+
     sched = build_scheduler()
     sched.start()
     log.info("Background scheduler running 24/7.")

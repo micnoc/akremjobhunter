@@ -124,32 +124,46 @@ class LocalIntelligentEngine:
 
     @staticmethod
     def write_cover_letter(job: dict, cv_text: str, language: str, signature: str) -> CoverLetter:
-        title = job.get("title", "Professional Role")
-        company = job.get("company", "Hiring Team")
+        title = job.get("title", "Poste proposé")
+        company = job.get("company", "Entreprise recruteuse")
         location = job.get("location", "")
         country = job.get("country", "")
 
-        lang = (language or "en").lower()[:2]
+        # Extract real profile elements from cv_text
+        prof = LocalIntelligentEngine.extract_cv_profile(cv_text) if cv_text else None
+        skills_str = ", ".join(prof.skills[:3]) if prof and prof.skills else "mes compétences techniques et mon savoir-faire pratique"
+        target_role = prof.target_titles[0] if prof and prof.target_titles else "professionnel qualifié"
+
+        # Look for experience years
+        exp_match = re.search(r"(\d+)\s*(?:ans?|years?|سنوات)", cv_text or "", re.IGNORECASE)
+        exp_str = f"avec plus de {exp_match.group(1)} ans d'expérience" if exp_match else "fort d'un parcours solide et éprouvé"
+
+        # Look for diploma
+        diploma_match = re.search(r"(Ingénieur|Licence|Master|BTS|BTP|CAP|Bachelor|Doctorat|شهادة)", cv_text or "", re.IGNORECASE)
+        diploma_mention = f"Titulaire d'un {diploma_match.group(1)}, " if diploma_match else ""
+
+        lang = (language or "fr").lower()[:2]
         if lang == "fr":
             subject = f"Candidature : {title} - {company}"
+            loc_str = f" à {location}" if location else ""
             body = (
-                f"Madame, Monsieur,\n\n"
-                f"Je vous adresse ma candidature pour le poste de {title} au sein de {company}.\n\n"
-                f"Fort de mon parcours professionnel et de mes compétences techniques détaillées dans mon curriculum vitæ ci-joint, "
-                f"je suis particulièrement motivé à l'idée d'intégrer vos équipes à {location} ({country}). "
-                f"Entièrement disponible et mobile, je suis prêt pour une intégration rapide et un engagement durable.\n\n"
-                f"Je reste à votre entière disposition pour tout échange ou entretien afin de vous exposer mes motivations.\n\n"
-                f"Veuillez agréer, Madame, Monsieur, l'expression de mes salutations distinguées.\n\n"
+                f"Madame, Monsieur le Responsable du Recrutement,\n\n"
+                f"Je vous soumets avec vif intérêt ma candidature pour le poste de {title} au sein de {company}{loc_str}.\n\n"
+                f"{diploma_mention}en tant que {target_role} {exp_str}, j'ai développé des compétences reconnues notamment en {skills_str}. "
+                f"Mon profil correspond directement aux exigences opérationnelles de votre offre, et je suis enthousiaste à l'idée d'apporter ma rigueur et mon dynamisme au sein de vos équipes.\n\n"
+                f"Parfaitement mobile à l'international ({country}), je suis immédiatement disponible pour engager les formalités nécessaires (visa / permis de travail) et m'intégrer durablement au sein de votre entreprise.\n\n"
+                f"Je me tiens à votre entière disposition pour un entretien afin de vous détailler mon expérience et mes réalisations.\n\n"
+                f"Je vous prie d'agréer, Madame, Monsieur, l'expression de mes salutations distinguées.\n\n"
                 f"{signature}"
             )
         elif lang == "ar":
             subject = f"طلب ترشح لوظيفة: {title} - {company}"
             body = (
-                f"حضرة المسؤول المحترم في {company}،\n\n"
-                f"يشرفني أن أتقدم بطلب ترشحي لشغل وظيفة {title} المعلنة لدى مؤسستكم في {location} ({country}).\n\n"
-                f"انطلاقاً من خبراتي العملية ومهاراتي التقنية الموضحة تفصيلاً في سيرتي الذاتية المرفقة، "
-                f"فإنني على أتم الاستعداد للمساهمة الفاعلة في نجاح مشاريعكم، مع جاهزيتي التامة للانتقال وبدء العمل فوراً.\n\n"
-                f"شاكراً لكم اهتمامكم، وأتطلع لفرصة مناقشة مؤهلاتي خلال مقابلة عمل قادمة.\n\n"
+                f"حضرة مسؤول التوظيف المحترم في {company}،\n\n"
+                f"يشرفني أن أتقدم لسيادتكم بطلب ترشحي لشغل وظيفة {title} المعلنة لديكم.\n\n"
+                f"انطلاقاً من تخصصي كـ {target_role} وخبرتي العملية المؤكدة، مع إتقاني لـ {skills_str}، "
+                f"فإنني على ثقة تامة بقدرتي على تقديم إضافة نوعية ومباشرة لمشاريع شركتكم الموقرة.\n\n"
+                f"أؤكد كامل جاهزيتي واستعدادي التام للانتقال وبدء العمل فوراً والتنسيق في إجراءات التأشيرة والعمل في {country}، متطلعاً لفرصة مناقشة مؤهلاتي خلال مقابلة شخصية قادمة.\n\n"
                 f"وتفضلوا بقبول فائق الاحترام والتقدير.\n\n"
                 f"{signature}"
             )
@@ -157,11 +171,11 @@ class LocalIntelligentEngine:
             subject = f"Application: {title} - {company}"
             body = (
                 f"Dear Hiring Team at {company},\n\n"
-                f"I am writing to express my strong interest in the {title} position located in {location} ({country}).\n\n"
-                f"With a solid background and verifiable experience grounded in the technical qualifications shown in my attached CV, "
-                f"I am confident in my ability to contribute effectively to your operations. "
-                f"I am fully prepared and available to relocate for this opportunity.\n\n"
-                f"Thank you for considering my application. I welcome the opportunity to discuss my qualifications during an interview.\n\n"
+                f"I am writing to express my strong enthusiasm for the {title} opening in {location} ({country}).\n\n"
+                f"As a dedicated {target_role} {exp_str}, with demonstrated expertise in {skills_str}, "
+                f"I have consistently delivered measurable operational results. My background directly aligns with the technical needs of your role.\n\n"
+                f"I am fully prepared for international relocation to {country} and available to complete all necessary work authorization procedures immediately.\n\n"
+                f"Thank you for considering my application. I look forward to the opportunity to discuss my qualifications during an interview.\n\n"
                 f"Sincerely,\n\n"
                 f"{signature}"
             )
@@ -240,22 +254,32 @@ class LocalIntelligentEngine:
 
     @staticmethod
     def extract_cv_profile(cv_text: str) -> CvProfile:
-        text = cv_text.strip()
+        text = (cv_text or "").strip()
         lines = [l.strip() for l in text.splitlines() if l.strip()]
 
-        # Candidate Name: usually the first non-empty line
-        candidate_name = lines[0] if lines else "Candidate"
-        if len(candidate_name) > 60:
-            candidate_name = candidate_name[:60]
+        # 1. Candidate Name: skip generic CV labels
+        candidate_name = "Candidate"
+        headline_candidates = []
+        for line in lines[:10]:
+            clean_l = re.sub(r"[^\w\s-]", "", line).strip()
+            if not clean_l:
+                continue
+            lower_l = clean_l.lower()
+            if lower_l in ("curriculum vitae", "curriculum", "vitae", "cv", "resume", "profil", "coordonnées", "informations"):
+                continue
+            if candidate_name == "Candidate" and len(clean_l) >= 3 and len(clean_l.split()) <= 4 and not re.search(r"\d", clean_l):
+                candidate_name = clean_l
+            elif len(clean_l) >= 4 and len(clean_l) <= 60 and not re.search(r"@|\.com|\.fr|\+?\d{8}", line):
+                headline_candidates.append(clean_l)
 
-        # Phone extraction
+        # 2. Phone extraction
         phones = re.findall(r"(?:\+?\d{1,4}[\s.-]?)?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,4}", text)
         phone = phones[0] if phones else ""
 
-        # Language detection
-        french_words = ["expérience", "formation", "compétences", "profil", "langues", "poste"]
-        arabic_words = ["خبرة", "تعليم", "مهارات", "شهادة", "سيرة"]
+        # 3. Language detection
         lower = text.lower()
+        french_words = ["expérience", "formation", "compétences", "profil", "langues", "poste", "professionnelle", "diplôme", "bac"]
+        arabic_words = ["خبرة", "تعليم", "مهارات", "شهادة", "سيرة", "المؤهلات", "اللغات"]
         if any(w in lower for w in french_words):
             lang = "fr"
         elif any(w in lower for w in arabic_words):
@@ -263,30 +287,112 @@ class LocalIntelligentEngine:
         else:
             lang = "en"
 
-        # Sector & Target Titles heuristic
-        sector = "Technical & Professional Services"
-        target_titles: list[str] = []
-        if any(w in lower for w in ["developer", "software", "python", "javascript", "flutter", "react", "développeur"]):
-            sector = "Information Technology & Software"
-            target_titles = ["Software Engineer", "Full Stack Developer", "Application Developer"]
-        elif any(w in lower for w in ["driver", "chauffeur", "transport", "logistics", "logistique", "magasinier"]):
-            sector = "Transport & Logistics"
-            target_titles = ["Professional Driver", "Logistics Coordinator", "Warehouse Specialist"]
-        elif any(w in lower for w in ["mechanical", "mécanique", "cnc", "cad", "industriel", "maintenance", "electrical"]):
-            sector = "Industrial & Engineering"
-            target_titles = ["Mechanical Technician", "Maintenance Engineer", "CAD/CNC Specialist"]
-        else:
-            target_titles = [candidate_name if len(candidate_name) < 30 else "Specialist"]
-
-        # Skills extraction
-        common_tech_skills = [
-            "Python", "JavaScript", "TypeScript", "Flutter", "React", "Docker", "SQL", "Git",
-            "AutoCAD", "SolidWorks", "CNC", "PLC", "Maintenance", "Logistics", "SAP", "Excel",
-            "Linux", "Project Management", "Customer Service", "French", "English", "Arabic"
+        # 4. Comprehensive Multi-Industry Classification (12 core categories)
+        DOMAINS = [
+            {
+                "sector": "Santé & Soins Médicaux (Healthcare & Nursing)",
+                "keywords": ["infirmier", "infirmière", "aide-soignant", "aide soignante", "médecin", "docteur", "kinésithérapeute", "pharmacien", "sage-femme", "laborantin", "radiologue", "nurse", "nursing", "caregiver", "healthcare", "hospital", "clinique", "médical", "ممرض", "تمريض", "طبيب", "صيدلي"],
+                "titles": ["Nurse", "Infirmier", "Healthcare Assistant", "Aide-Soignant", "Medical Assistant"],
+                "skills": ["Soins infirmiers", "Hygiène hospitalière", "Premiers secours", "Administration des médicaments", "Surveillance clinique", "Dossier patient"]
+            },
+            {
+                "sector": "Comptabilité, Finance & Gestion (Accounting & Finance)",
+                "keywords": ["comptable", "comptabilité", "expert-comptable", "finance", "financier", "trésorerie", "audit", "auditeur", "contrôleur de gestion", "fiscalité", "paie", "gestionnaire", "facturation", "sage", "ciel", "bilan", "accountant", "accounting", "bookkeeper", "محاسب", "محاسبة", "تدقيق مالي"],
+                "titles": ["Accountant", "Comptable", "Financial Analyst", "Contrôleur de Gestion", "Assistant Comptable"],
+                "skills": ["Tenue comptable", "Bilan comptable", "Rapprochement bancaire", "Fiscalité & TVA", "Logiciels Sage / Excel", "Gestion de la paie"]
+            },
+            {
+                "sector": "Transport, Chauffeur & Logistique (Transport & Logistics)",
+                "keywords": ["chauffeur", "conducteur", "poids lourd", "spl", "pl", "semi-remorque", "livreur", "permis c", "permis ec", "fimo", "fcos", "cariste", "caces", "magasinier", "préparateur de commandes", "logistique", "transit", "supply chain", "truck driver", "driver", "سائق", "نقل", "لوجستيك", "شاحنة"],
+                "titles": ["Heavy Truck Driver", "Chauffeur Poids Lourd", "Logistics Specialist", "Magasinier Cariste", "Chauffeur SPL"],
+                "skills": ["Conduite sécuritaire", "Réglementation transport", "CACES", "Gestion de stocks", "Préparation de commandes", "Arrimage et sécurisation"]
+            },
+            {
+                "sector": "Hôtellerie, Restauration & Cuisine (Hospitality & Culinary)",
+                "keywords": ["cuisinier", "chef de cuisine", "chef cuisinier", "commis de cuisine", "pâtissier", "boulanger", "serveur", "barman", "réceptionniste", "hôtellerie", "restauration", "cook", "chef", "baker", "waiter", "hospitality", "haccp", "طباخ", "طاهي", "نادل", "فندقة"],
+                "titles": ["Cook", "Cuisinier", "Chef de Partie", "Boulanger Pâtissier", "Hospitality Specialist"],
+                "skills": ["Normes HACCP", "Cuisine internationale", "Pâtisserie", "Gestion des cuissons", "Service en salle", "Gestion des commandes"]
+            },
+            {
+                "sector": "BTP, Construction & Génie Civil (Civil Engineering & Construction)",
+                "keywords": ["génie civil", "conducteur de travaux", "chef de chantier", "maçon", "coffreur", "ferrailleur", "peintre en bâtiment", "plâtrier", "plaquiste", "carreleur", "charpentier", "menuisier", "btp", "travaux publics", "béton", "chantier", "civil engineer", "construction", "بناء", "هندسة مدنية", "دهان", "نجار"],
+                "titles": ["Civil Engineer", "Ingénieur Génie Civil", "Construction Supervisor", "Chef de Chantier", "Technicien BTP"],
+                "skills": ["Lecture de plans", "Coordination de chantier", "Sécurité BTP", "Calcul de structure", "Béton armé", "Topographie"]
+            },
+            {
+                "sector": "Électricité & Électromécanique (Electrical Engineering)",
+                "keywords": ["électricien", "électricité", "câblage", "tableau électrique", "électromécanicien", "électromécanique", "électrotechnique", "automaticien", "automate", "schneider", "siemens", "plc", "electrician", "electrical", "كهربائي", "كهروميكانيك"],
+                "titles": ["Electrician", "Électricien Industriel", "Electromechanical Technician", "Technicien Électromécanicien"],
+                "skills": ["Schémas électriques", "Câblage industriel", "Automates programmables (PLC)", "Diagnostic pannes", "Normes NFC 15-100", "Maintenance BT/HT"]
+            },
+            {
+                "sector": "Plomberie, Chauffage & Climatisation (Plumbing & HVAC)",
+                "keywords": ["plombier", "plomberie", "chauffagiste", "frigoriste", "climatisation", "froid et climatisation", "hvac", "tuyauterie", "fluides frigorigènes", "pompe à chaleur", "sanitaire", "plumber", "refrigeration", "سباك", "تبريد وتكييف"],
+                "titles": ["HVAC Technician", "Technicien Frigoriste", "Plumber", "Plombier Chauffagiste"],
+                "skills": ["Installation sanitaire", "Systèmes de climatisation", "Tuyauterie cuivre/multicouche", "Manipulation fluides frigorigènes", "Dépannage chaudières"]
+            },
+            {
+                "sector": "Soudure, Chaudronnerie & Métallurgie (Welding & Metalwork)",
+                "keywords": ["soudeur", "soudure", "tig", "mig", "mag", "arc", "chaudronnier", "chaudronnerie", "tuyauterie", "métallier", "métaux", "acier", "welder", "welding", "لحام", "حداد"],
+                "titles": ["Welder", "Soudeur TIG MIG", "Metal Fabricator", "Chaudronnier Tuyauteur"],
+                "skills": ["Procédés TIG / MIG / MAG", "Soudure toutes positions", "Lecture plans isométriques", "Meulage et ajustage", "Contrôle non destructif"]
+            },
+            {
+                "sector": "Mécanique & Maintenance Industrielle (Mechanical & Maintenance)",
+                "keywords": ["mécanicien", "mécanique", "maintenance industrielle", "tourneur", "fraiseur", "usinage", "cnc", "commande numérique", "technicien de maintenance", "hydraulicien", "pneumatique", "automotive", "mechanic", "ميكانيكي", "صيانة صناعية"],
+                "titles": ["Mechanical Technician", "Technicien de Maintenance", "Industrial Mechanic", "Mécanicien Automobile"],
+                "skills": ["Maintenance préventive/curative", "Hydraulique & Pneumatique", "Usinage tournage/fraisage", "Diagnostic mécanique", "GMAO"]
+            },
+            {
+                "sector": "Informatique, Développement & Réseaux (IT & Software)",
+                "keywords": ["développeur", "programmation", "python", "java", "javascript", "typescript", "react", "flutter", "angular", "node", "php", "devops", "docker", "cloud", "aws", "système d'information", "administrateur système", "technicien réseau", "cyber", "data analyst", "software engineer", "developer", "مطور", "برمجة"],
+                "titles": ["Software Developer", "Développeur Logiciel", "IT Support Specialist", "Technicien Systèmes et Réseaux"],
+                "skills": ["Python / JavaScript", "Développement web & mobile", "Bases de données SQL", "Git & CI/CD", "Support technique & Réseaux"]
+            },
+            {
+                "sector": "Commerce, Vente & Service Client (Sales & Customer Service)",
+                "keywords": ["commercial", "technico-commercial", "vendeur", "vente", "conseiller commercial", "chargé de clientèle", "téléconseiller", "service client", "relation client", "caissier", "sales", "customer service", "مبيعات", "خدمة عملاء"],
+                "titles": ["Sales Representative", "Conseiller Commercial", "Customer Service Agent", "Chargé de Clientèle"],
+                "skills": ["Prospection commerciale", "Négociation", "Fidélisation client", "Gestion de litiges", "CRM & Outils de vente"]
+            },
+            {
+                "sector": "Agriculture & Agroalimentaire (Agriculture & Farming)",
+                "keywords": ["agriculteur", "ouvrier agricole", "maraîcher", "agronome", "ingénieur agronome", "élevage", "vétérinaire", "agroalimentaire", "récolte", "serres", "tracteur", "farm worker", "agriculture", "فلاح", "عامل فلاحي", "زراعة"],
+                "titles": ["Agricultural Worker", "Ouvrier Agricole", "Farm Technician", "Technicien Agricole"],
+                "skills": ["Travaux des champs", "Conduite d'engins agricoles", "Irrigation et fertilisation", "Culture maraîchère sous serre", "Entretien du matériel agricole"]
+            },
         ]
-        found_skills = [s for s in common_tech_skills if s.lower() in lower]
-        if not found_skills:
-            found_skills = ["Technical Problem Solving", "Teamwork", "Operations"]
+
+        best_domain = None
+        best_score = 0
+        for d in DOMAINS:
+            score = sum(1 for kw in d["keywords"] if kw in lower)
+            if score > best_score:
+                best_score = score
+                best_domain = d
+
+        sector = best_domain["sector"] if best_domain else "Technical & Vocational Services"
+        target_titles = list(best_domain["titles"]) if best_domain else ["Specialist", "Technician", "Professional"]
+
+        # Check if headline contains a specific title in first lines
+        for h in headline_candidates[:3]:
+            if any(w in h.lower() for w in ["ingénieur", "technicien", "chauffeur", "développeur", "comptable", "infirmier", "cuisinier", "soudeur", "plombier", "électricien", "commercial", "ouvrier", "chef", "responsable", "conducteur", "agent", "mécanicien", "analyste", "doctor", "engineer", "technician", "driver", "accountant", "nurse", "cook", "mechanic"]):
+                target_titles.insert(0, h)
+                break
+
+        found_skills = []
+        if best_domain:
+            for s in best_domain["skills"]:
+                found_skills.append(s)
+
+        extra_skills = [
+            "AutoCAD", "SolidWorks", "Catia", "Excel", "SAP", "GMAO", "Word", "PowerPoint",
+            "Permis B", "Permis C", "Permis EC", "CACES", "FIMO", "HACCP", "SST / Premiers secours",
+            "Anglais technique", "Français professionnel", "Arabe", "Travail en équipe", "Rigueur"
+        ]
+        for es in extra_skills:
+            if es.lower() in lower and es not in found_skills:
+                found_skills.append(es)
 
         return CvProfile(
             candidate_name=candidate_name,
@@ -294,7 +400,7 @@ class LocalIntelligentEngine:
             language=lang,
             sector=sector,
             target_titles=target_titles[:6],
-            skills=found_skills[:12],
+            skills=found_skills[:15],
         )
 
     @staticmethod
@@ -342,21 +448,38 @@ class LocalIntelligentEngine:
         prompt_lower = prompt_clean.lower()
         doc_snippet = (document_text or "")[:5000]
 
-        # Detect language: Arabic, French, or English
-        has_arabic = bool(re.search(r'[؀-ۿ]', prompt_clean))
-        has_french = not has_arabic and (
+        # 1. Tunisian Derja / Arabizi detection
+        tunisian_keywords = [
+            "3asslema", "aslema", "ahla", "chneya", "chkoun", "n7eb", "kifech", "chfama",
+            "5edma", "khedma", "flous", "brabi", "bellehi", "tawa", "fech", "wa9tech",
+            "chnowa", "chnia", "cv", "el ai", "mahouch", "ye5dem", "mriguel", "sahbi",
+            "khouya", "5ouya", "3awnni", "nlawej", "nlawaj", "mouch", "famech", "kontra",
+            "contrat", "floussi", "visa", "chancenkarte", "lmia", "canada"
+        ]
+        is_tunisian_arabizi = any(kw in prompt_lower for kw in tunisian_keywords)
+        has_arabic_script = bool(re.search(r'[؀-ۿ]', prompt_clean))
+        has_french = not has_arabic_script and not is_tunisian_arabizi and (
             (language and language.lower().startswith('fr')) or
-            any(w in prompt_lower for w in ["bonjour", "salut", "comment", "emploi", "travail", "lettre", "poste", "france", "québec", "allemagne", "merci", "aide"])
+            any(w in prompt_lower for w in ["bonjour", "salut", "comment", "emploi", "travail", "lettre", "poste", "france", "québec", "allemagne", "merci", "aide", "embauche"])
         )
-        is_ar = has_arabic or (language and language.lower().startswith('ar'))
-        is_fr = has_french
 
-        # 1. Document analysis requested (Contract, CV ATS, Offer Letter)
+        # 2. Document Analysis Handlers (Contract, CV ATS, Offer Letter)
         if doc_snippet:
-            if doc_type == "contract" or any(w in prompt_lower for w in ["contract", "عقد", "contrat"]):
+            if doc_type == "contract" or any(w in prompt_lower for w in ["contract", "عقد", "contrat", "kontra"]):
                 analysis = LocalIntelligentEngine.analyze_contract(doc_snippet)
                 flags = analysis.get('red_flags', [])
-                if is_ar:
+                if is_tunisian_arabizi:
+                    flags_str = "\n".join(f"  ⚠️ {rf}" for rf in flags) if flags else "  ✅ العقد نظيف، ما ثماش حتى طلب فلوس أو حجز جواز السفر."
+                    return (
+                        f"📋 **تقرير فحص العقد - VisaJob AI**\n\n"
+                        f"• **مستوى الأمان:** {'عقد سليم وقانوني ✅' if analysis['risk_rating'] == 'SAFE' else '⚠️ تحذير: ثمة شبهة تحيل أو خطر!'}\n"
+                        f"• **الراتب:** {analysis.get('compensation', 'غير محدد')}\n"
+                        f"• **الفيزا وعقد العمل:** {analysis.get('sponsorship_status')}\n"
+                        f"• **الملاحظات والبنود المشبوهة:**\n{flags_str}\n\n"
+                        f"💡 **نصيحة المنظومة:**\n"
+                        f"{'تنجم تكمل إجراءاتك لكن ثبت في رقم التسجيل التجاري للشركة قبل التوقيع.' if analysis['risk_rating'] == 'SAFE' else '⚠️ رد بالك تدفع حتى مليم مسبق باسم معالجة الفيزا أو ملف السفر!'}"
+                    )
+                elif has_arabic_script or (language and language.lower().startswith('ar')):
                     flags_str = "\n".join(f"  ⚠️ {rf}" for rf in flags) if flags else "  ✅ لم يتم رصد أي بنود دفع مسبق أو مصادرة غير قانونية."
                     status_text = "آمن ومطابق للشروط العامة" if analysis['risk_rating'] == "SAFE" else "عالي الخطورة (يوجد شبهة احتيال)"
                     return (
@@ -369,7 +492,7 @@ class LocalIntelligentEngine:
                         f"💡 **توصية VisaJob AI:**\n"
                         f"{'يُنصح بالتثبت من رقم التسجيل التجاري للشركة لدى الجهات الرسمية قبل التوقيع.' if analysis['risk_rating'] == 'SAFE' else '⚠️ تحذير: لا تدفع أي مبالغ مالية مسبقة مقابل التأشيرة أو فحص العقد نهائياً!'}"
                     )
-                elif is_fr:
+                elif has_french:
                     flags_str = "\n".join(f"  ⚠️ {rf}" for rf in flags) if flags else "  ✅ Aucune clause de paiement préalable ou confiscation détectée."
                     return (
                         f"📋 **Rapport d'analyse du contrat de travail**\n\n"
@@ -394,7 +517,7 @@ class LocalIntelligentEngine:
 
             if doc_type == "cv" or any(w in prompt_lower for w in ["ats", "cv", "resume", "سيرة"]):
                 ats = LocalIntelligentEngine.analyze_cv_ats(doc_snippet)
-                if is_ar:
+                if is_tunisian_arabizi or has_arabic_script:
                     skills_str = ", ".join(ats['detected_skills'][:10]) or "مهارات عامة"
                     missing_str = ", ".join(ats['missing_keywords'][:6]) or "لا توجد نواقص جوهرية"
                     return (
@@ -420,9 +543,47 @@ class LocalIntelligentEngine:
                         f"{recs_str}"
                     )
 
-        # 2. Free-form & Immigration Inquiries (Dynamic Multilingual Logic)
-        if is_ar:
-            # Arabic Answers
+        # 3. Conversational / Q&A Handlers
+        # A. Tunisian Derja / Arabizi Queries
+        if is_tunisian_arabizi:
+            if any(w in prompt_lower for w in ["canada", "kanda", "lmia", "quebec"]):
+                return (
+                    "🇨🇦 **عسلامة خويا! هاو الدليل الواضح للهجرة والخدمة في كندا:**\n\n"
+                    "1. **عروض Job Bank Canada (المخصصة للأجانب):**\n"
+                    "   السيستام يفرزلك العروض اللي فيها رمز `fglo=1`. المشغلين هاذم عندهم رخصة LMIA خالصة وحاضرة ويحبوا يجيبوا خدامة من تونس ومن العالم كامل.\n\n"
+                    "2. **برنامج Mobilité Francophone:**\n"
+                    "   كان مستواك في الفرنسية باهي (B2)، المشغل الكندي ينجم يخدمك خارج مقاطعة كيبيك من غير ما يستنى رخصة LMIA المعقدة!\n\n"
+                    "3. **شنوا المطلوب منك؟**\n"
+                    "   ادخل لـ 'Coffre CV' وتأكد اللي صبيت النسخة الفرنسية أو الإنجليزية من الـ CV متاعك. السيستام توا يلوجلك على الخدم اللي تطابق اختصاصك بالضبط ويكتبلك رسالة التقديم.\n\n"
+                    "قلي شنوا اختصاصك توة ونقلك أناهي ولاية كندية فيها أكثر طلب عليك!"
+                )
+            if any(w in prompt_lower for w in ["chancenkarte", "germany", "allemagne", "almania"]):
+                return (
+                    "🇩🇪 **فرص العمل وبطاقة الفرصة الألمانية (Chancenkarte):**\n\n"
+                    "1. **بطاقة الفرصة:** تنجم تسافر لألمانيا وتبحث على خدمة على عين المكان لمدة عام كامل، بشرط تجمع 6 نقاط (ديبلوم معترف بيه + إنجليزية B2 أو ألمانية A1 + عمرك أقل من 35).\n"
+                    "2. **البطاقة الزرقاء الأوروبية (EU Blue Card):** للمهندسين والممرضين والتقنيين السامين، عقد عمل براتب يبدأ من حوالي 41 ألف يورو يعطيك إقامة دائمة في وقت قياسي.\n\n"
+                    "تحب تشوف العروض المتاحة في ألمانيا؟ ادخل لـ 'Explorer les offres' وفلتر على علم ألمانيا 🇩🇪!"
+                )
+            if any(w in prompt_lower for w in ["contrat", "kontra", "flous", "arnaque", "sar9a", "wahmi"]):
+                return (
+                    "⚠️ **كيفاش تفرق بين العقد الحقيقي والعقد الوهمي؟**\n\n"
+                    "1. **القاعدة الذهبية:** المشغل الحقيقي في كندا أو أوروبا هو اللي يخلص مصاريف رخصة العمل (LMIA / Work Permit)؛ القانون يمنع عليه يطلب منك تدفع حق الفيزا أو دوسي التقديم!\n"
+                    "2. **الإيميل الرسمي:** الشركات الرسمية تبعث من دومين الشركة (مثال: @company.com) مش من Gmail أو Yahoo.\n"
+                    "3. **الفحص المباشر:** تنجم تنزل على علامة المشبك 📎 هوني وتبعثلي ملف الـ PDF متاع العقد، ونقراهولك سطر بسطر ونقلك كان فيه أي شبهة تحيل!\n\n"
+                    "كان عندك عقد تحب نفحصوه توة، ابعثهولي وماتترددش."
+                )
+            # Default warm friendly Tunisian response
+            return (
+                f"عسلامة خويا العزيز وبك في **VisaJob AI**! 🤝\n\n"
+                f"أنا معاك ومستعد نعاونك في كل خطوة تخص خروجك وخدمتك البرا:\n"
+                f"• 🔍 **نلوجلك على خدمة حقيقية:** حسب اختصاصك وسيرتك الذاتية في كندا وألمانيا وفرنسا والخليج.\n"
+                f"• 🛡️ **نفحص أي عقد أو عرض:** باش نضمنوا اللي ما فماش حتى تحيل أو طلب فلوس غير قانوني.\n"
+                f"• ✍️ **نكتبولك رسالة ترشح (Lettre de motivation):** احترافية ومخصصة لكل شركة تختارها.\n\n"
+                f"قلي شنوا تخصصك أو فاش تحب نعاونك توا وبحول الله تلقى كان اللي يفيدك!"
+            )
+
+        # B. Standard Arabic Queries
+        if has_arabic_script or (language and language.lower().startswith('ar')):
             if any(w in prompt_lower for w in ["كندا", "canada", "lmia", "كيبيك", "أريما"]):
                 return (
                     "🇨🇦 **دليل الهجرة والعمل في كندا عبر VisaJob AI:**\n\n"
@@ -434,7 +595,6 @@ class LocalIntelligentEngine:
                     "   يتطلب تقييم الشهادات (ECA مثل WES) واختبار لغة (IELTS General أو TEF Canada). الحصول على عقد عمل كندي موثق يمنحك بين 50 إلى 200 نقطة إضافية تضمن قبولك فوراً.\n\n"
                     "💡 *نصيحة المنظومة:* احرص على تفعيل نسختك الفرنسية أو الإنجليزية من السيرة الذاتية داخل تبويب CV Vault ليقوم الوكلاء بتقديم طلبك تلقائياً."
                 )
-
             if any(w in prompt_lower for w in ["ألمانيا", "germany", "بطاقة الفرصة", "chancenkarte", "بلو كارد", "blue card"]):
                 return (
                     "🇩🇪 **مسارات العمل والإقامة في ألمانيا:**\n\n"
@@ -445,28 +605,6 @@ class LocalIntelligentEngine:
                     "3. **معادلة الشهادات (Anerkennung):**\n"
                     "   يجب التأكد من إدراج جامعتك وتخصصك في قاعدة بيانات Anabin الألمانية لضمان اعتماد ملفك لدى السفارة."
                 )
-
-            if any(w in prompt_lower for w in ["فرنسا", "france", "passeport talent", "جواز موهبة", "باريس"]):
-                return (
-                    "🇫🇷 **فرص العمل وتأشيرات الكفاءات في فرنسا:**\n\n"
-                    "1. **تأشيرة جواز سفر الكفاءات (Passeport Talent):**\n"
-                    "   مخصصة للمهندسين وحملة الماجستير والكوادر العليا، وتمنحك إقامة قابلة للتجديد لـ 4 سنوات مع استقدام فوري للأسرة ودون الحاجة لفحص سوق العمل المحلي إذا كان الراتب يفوق ضعف الحد الأدنى (SMIC).\n\n"
-                    "2. **قائمة المهن التي تشهد نقصاً (Métiers en Tension):**\n"
-                    "   تشمل قطاعات تكنولوجيا المعلومات، البناء والأشغال العامة، اللوجستيك، والميكانيك. يتم إصدار تصريح العمل عبر منصة DREETS الرقمية في غضون أسابيع قليلة.\n\n"
-                    "💡 *نصيحة:* تأكد من كتابة سيرتك الذاتية وخطاب التقديم باللغة الفرنسية السليمة، ويمكن لوكيلنا الآلي توليدها لك بضغطة زر."
-                )
-
-            if any(w in prompt_lower for w in ["الخليج", "السعودية", "الإمارات", "قطر", "قوى", "دبي"]):
-                return (
-                    "🇸🇦🇦🇪 **فرص العمل والانتقال لدول الخليج العربي:**\n\n"
-                    "1. **المملكة العربية السعودية (منصة قوى):**\n"
-                    "   يتم توثيق كافة عقود العمل وتأشيرات الكفاءات رقمياً عبر منصة 'قوى'. يشهد السوق طلباً متزايداً على مهندسي الذكاء الاصطناعي، مديري المشاريع، والمختصين الفنيين ضمن مشاريع رؤية 2030.\n\n"
-                    "2. **الإمارات العربية المتحدة:**\n"
-                    "   تأشيرة استكشاف فرص العمل والإقامة الخضراء للعمل الحر أو التوظيف المباشر في دبي وأبوظبي بدون اشتراط كفيل محلي للكفاءات المتخصصة.\n\n"
-                    "3. **قطر وسلطنة عمان:**\n"
-                    "   استقطاب مباشر للكوادر الطبية والهندسية والتعليمية مع سكن وتأمين صحي شامل وتغطية كاملة لتذاكر الطيران والإقامة."
-                )
-
             if any(w in prompt_lower for w in ["سيرة", "cv", "resume", "ats", "كيف أكتب", "تعديل"]):
                 return (
                     "📄 **كيف تصنع سيرة ذاتية دولية تتفوق على أنظمة الفرز الآلي (ATS)؟**\n\n"
@@ -475,8 +613,6 @@ class LocalIntelligentEngine:
                     "3. **مطابقة الكلمات المفتاحية:** تفحص إعلان الوظيفة واستخدم نفس المصطلحات التقنية المذكورة فيه.\n"
                     "4. **اللغة المستهدفة:** احرص على استخدام السيرة الذاتية باللغة الإنجليزية لكندا وألمانيا والخليج، واللغة الفرنسية لفرنسا وكيبيك وبلجيكا."
                 )
-
-            # Contextual Arabic reply for other queries
             return (
                 f"مرحباً بك! أنا مستشارك الذكي للتوظيف والهجرة الدولية في منصة **VisaJob AI**.\n\n"
                 f"بخصوص استفسارك: *'{prompt_clean}'*، يسعدني تقديم المساعدة المتخصصة في أي من المجالات التالية:\n"
@@ -487,12 +623,12 @@ class LocalIntelligentEngine:
                 f"أخبرني بما تحتاجه بالتحديد أو ارفع مستندك وسأقوم بتدقيقه لك فوراً!"
             )
 
-        elif is_fr:
-            # French Answers
-            if any(w in prompt_lower for w in ["canada", "québec", "lmia"]):
+        # C. French Queries
+        if has_french:
+            if any(w in prompt_lower for w in ["canada", "québec", "lmia", "francophone"]):
                 return (
                     "🇨🇦 **Immigration & Emploi au Canada avec VisaJob AI :**\n\n"
-                    "1. **Guichet Emplois (Job Bank fglo=1) :** Filtrage des offres validées avec dispense ou acceptation d'EIMT (Étude d'Impact sur le Marché du Travail) pour les candidats internationaux.\n"
+                    "1. **Guichet Emplois (Job Bank fglo=1) :** Filtrage des offres validées avec acceptation d'EIMT (Étude d'Impact sur le Marché du Travail) pour les candidats internationaux.\n"
                     "2. **Mobilité Francophone :** Exemption directe d'EIMT pour tout emploi qualifié hors Québec si vous maîtrisez le français !\n"
                     "3. **Entrée Express :** Obtention de points cruciaux grâce à une offre d'emploi vérifiée."
                 )
@@ -501,34 +637,27 @@ class LocalIntelligentEngine:
                 f"Concernant votre demande : *'{prompt_clean}'*, je peux vous aider à :\n"
                 f"• Analyser vos contrats de travail et déceler les clauses frauduleuses ou frais suspects.\n"
                 f"• Optimiser votre CV pour les filtres ATS des recruteurs internationaux.\n"
-                f"• Vous orienter sur les démarches de visa pour le Canada, la France ou l'Allemagne.\n"
+                f"• Cibler les offres vérifiées pour le Canada, l'Allemagne et la France.\n"
                 f"N'hésitez pas à me poser une question précise ou à déposer un document pour analyse."
             )
-        else:
-            # English Answers
-            if any(w in prompt_lower for w in ["canada", "lmia", "express entry"]):
-                return (
-                    "🇨🇦 **Canada Immigration & Employment Pathways:**\n\n"
-                    "1. **Job Bank Canada (fglo=1):** Employers verified to recruit foreign workers under LMIA-approved streams.\n"
-                    "2. **Express Entry (Federal Skilled Worker):** Language proficiency (CLB 7+) and ECA credential verification. A valid job offer awards 50 to 200 CRS points.\n"
-                    "3. **Mobilité Francophone:** Exempts Canadian employers outside Quebec from LMIA requirements if your primary language is French.\n"
-                    "VisaJob AI automatically scans and highlights these opportunities directly in your Jobs Center."
-                )
-            if any(w in prompt_lower for w in ["germany", "chancenkarte", "blue card"]):
-                return (
-                    "🇩🇪 **Germany Employment & Opportunity Card (Chancenkarte):**\n\n"
-                    "1. **Chancenkarte:** Points-based job search visa (minimum 6 points required: degree, German A1/A2 or English B2, under 35 years old).\n"
-                    "2. **EU Blue Card Germany:** Fast-track work permit with lower gross salary thresholds for shortage professions (~41,041€/year in STEM, IT, Healthcare).\n"
-                    "3. **Anabin Verification:** Ensure your university degree is recognized (Status H+) before visa appointment."
-                )
+
+        # D. English Queries (Default)
+        if any(w in prompt_lower for w in ["canada", "lmia", "express entry"]):
             return (
-                f"Hello! I am your AI Immigration & Employment Consultant at **VisaJob AI**.\n\n"
-                f"Regarding your query: *'{prompt_clean}'*, I am equipped to assist you with:\n"
-                f"• **Contract Scam Audits:** Identifying advance-fee fraud, fake recruiter domains, and illegal passport withholding.\n"
-                f"• **ATS CV Optimization:** Keyword matching and formatting for multinational applicant tracking systems.\n"
-                f"• **Visa Pathways:** Sponsorship requirements for Canada (LMIA), Germany (Chancenkarte/Blue Card), France, and Gulf countries.\n"
-                f"• **Targeted Cover Letters:** Generating customized professional letters tailored to each opening."
+                "🇨🇦 **Canada Immigration & Employment Pathways:**\n\n"
+                "1. **Job Bank Canada (fglo=1):** Employers verified to recruit foreign workers under LMIA-approved streams.\n"
+                "2. **Express Entry (Federal Skilled Worker):** Language proficiency (CLB 7+) and ECA credential verification. A valid job offer awards 50 to 200 CRS points.\n"
+                "3. **Mobilité Francophone:** Exempts Canadian employers outside Quebec from LMIA requirements if your primary language is French.\n"
+                "VisaJob AI automatically scans and highlights these opportunities directly in your Jobs Center."
             )
+        return (
+            f"Hello! I am your AI Immigration & Employment Consultant at **VisaJob AI**.\n\n"
+            f"Regarding your query: *'{prompt_clean}'*, I am equipped to assist you with:\n"
+            f"• **Contract Scam Audits:** Identifying advance-fee fraud, fake recruiter domains, and illegal passport withholding.\n"
+            f"• **ATS CV Optimization:** Keyword matching and formatting for multinational applicant tracking systems.\n"
+            f"• **Visa Pathways:** Sponsorship requirements for Canada (LMIA), Germany (Chancenkarte/Blue Card), France, and Gulf countries.\n"
+            f"• **Targeted Cover Letters:** Generating customized professional letters tailored to each opening."
+        )
     @staticmethod
     def analyze_contract(contract_text: str) -> dict[str, Any]:
         text_lower = contract_text.lower()

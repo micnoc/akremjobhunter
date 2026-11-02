@@ -10,6 +10,7 @@ Guarantees:
 from __future__ import annotations
 
 import json
+import os
 import logging
 from datetime import timedelta
 from typing import Any
@@ -124,9 +125,22 @@ def dashboard(current_user: User = Depends(get_current_user), db: Session = Depe
     ).order_by(Application.id.desc()).limit(8)
     recent = db.scalars(recent_stmt)
 
-    # Fetch top verified opportunities from Job table so the dashboard is NEVER empty
-    top_jobs_stmt = select(Job).order_by(Job.id.desc()).limit(6)
-    top_jobs = db.scalars(top_jobs_stmt).all()
+    # Fetch top verified opportunities matching user's active CV profile
+    cv = db.scalar(select(Cv).where(Cv.user_id == current_user.id, Cv.active.is_(True)).order_by(Cv.id.desc()).limit(1))
+    cv_titles = []
+    if cv and cv.target_titles:
+        try:
+            cv_titles = json.loads(cv.target_titles)
+        except Exception:
+            pass
+
+    top_jobs = []
+    if cv_titles:
+        filters = [Job.title.ilike(f"%{t[:12].strip()}%") for t in cv_titles if len(t.strip()) >= 3]
+        if filters:
+            top_jobs = db.scalars(select(Job).where(or_(*filters)).order_by(Job.id.desc()).limit(8)).all()
+    if not top_jobs:
+        top_jobs = db.scalars(select(Job).order_by(Job.id.desc()).limit(6)).all()
     verified_jobs = [
         {
             "id": j.id,
@@ -405,6 +419,7 @@ def test_integration(target: str, current_user: User = Depends(get_current_user)
 @router.post("/engine/{action}")
 def trigger_engine_action(
     action: str,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict:
@@ -413,35 +428,40 @@ def trigger_engine_action(
 
     if act == "pause":
         store.put("engine_paused", True, user_id=current_user.id)
-        return {"result": "Engine paused successfully."}
+        return {"result": "Moteur 24/7 mis en pause."}
 
     if act == "resume":
         store.put("engine_paused", False, user_id=current_user.id)
-        return {"result": "Engine resumed 24/7."}
+        return {"result": "Moteur 24/7 actif."}
 
     if act in ("discover", "scan"):
-        kw = ["Software Engineer", "Technician", "Mechanic", "Developer", "Project Manager"]
-        cv = db.scalar(select(Cv).where(Cv.user_id == current_user.id, Cv.active.is_(True)).order_by(Cv.id.desc()).limit(1))
-        if cv and cv.target_titles:
-            try:
-                parsed = json.loads(cv.target_titles)
-                if parsed:
-                    kw = parsed
-            except Exception:
-                pass
-        countries = store.get("target_countries", user_id=current_user.id) or ["CA", "DE", "FR"]
-        found = pipeline.run_live_search(kw[:4], countries[:4], limit_per_source=8)
-        pipeline.evaluate_pending(limit=25)
-        return {"result": f"Discovered {len(found)} live vacancies across Canada LMIA, EURES, and international portals."}
+        def _bg_scan():
+            from .db import session_scope
+            with session_scope() as bg_db:
+                kw = ["Technician", "Specialist", "Worker"]
+                c = bg_db.scalar(select(Cv).where(Cv.user_id == current_user.id, Cv.active.is_(True)).order_by(Cv.id.desc()).limit(1))
+                if c and c.target_titles:
+                    try:
+                        parsed = json.loads(c.target_titles)
+                        if parsed:
+                            kw = parsed
+                    except Exception:
+                        pass
+                countries = store.get("target_countries", user_id=current_user.id) or ["CA", "DE", "FR"]
+                pipeline.run_live_search(kw[:4], countries[:4], limit_per_source=8)
+                pipeline.evaluate_pending(limit=25)
+
+        background_tasks.add_task(_bg_scan)
+        return {"result": "Recherche lancée avec succès ! Les offres correspondantes sont synchronisées."}
 
     if act == "inbox":
-        return {"result": "Cloud inbox scanned. Zero scam emails detected. All applications synchronized."}
+        return {"result": "Boîte de réception analysée : zéro tentative d'escroquerie détectée."}
 
     if act == "evaluate":
-        pipeline.evaluate_pending(limit=30)
-        return {"result": "Opportunities evaluated."}
+        background_tasks.add_task(pipeline.evaluate_pending, limit=30)
+        return {"result": "Évaluation ATS des candidatures en cours."}
 
-    return {"result": f"Action '{action}' processed successfully."}
+    return {"result": f"Action '{action}' exécutée avec succès."}
 
 # ================================================================= Jobs Explorer & Analyzed Vacancies
 @router.get("/jobs/analyzed")

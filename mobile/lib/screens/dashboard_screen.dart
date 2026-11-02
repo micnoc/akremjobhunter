@@ -1,3 +1,4 @@
+import 'package:url_launcher/url_launcher.dart';
 import 'jobs_explorer_screen.dart';
 import '../l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -567,6 +568,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final score = item['score'] ?? 80;
         final elig = (item['eligibility'] ?? 'VISA_SPONSORED').toString().replaceAll('_', ' ');
         final id = item['id'] as int;
+        final url = (item['url'] ?? '').toString();
 
         final flag = country == 'CA' ? '🇨🇦' : country == 'DE' ? '🇩🇪' : country == 'FR' ? '🇫🇷' : country == 'GB' ? '🇬🇧' : country == 'US' ? '🇺🇸' : '🌍';
 
@@ -599,6 +601,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Text('$score% ATS', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppTheme.primary)),
               ),
               const SizedBox(width: 8),
+              if (url.isNotEmpty) ...[
+                IconButton(
+                  onPressed: () async {
+                    final uri = Uri.parse(url);
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    }
+                  },
+                  icon: const Icon(Icons.open_in_new_rounded, size: 18, color: AppTheme.secondary),
+                  tooltip: isAr ? 'فتح الرابط الأصلي' : (isFr ? "Ouvrir l'offre source" : 'Open Original Job Link'),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                const SizedBox(width: 8),
+              ],
               ElevatedButton(
                 onPressed: () async {
                   try {
